@@ -1,10 +1,13 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Mountain, MapPin, TreePine, Compass, Home, Plug,
   Layers, ChevronRight, AlertTriangle, CheckCircle,
-  Clock, ExternalLink, Pencil, Check, X, Info,
-  Navigation, Target, Zap
+  ExternalLink, Pencil, Check, Info,
+  Navigation, Target, Zap, Map, Lightbulb,
+  Plus, Trash2, Edit3, Save, X,
 } from "lucide-react";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 
 // ═══════════════════════════════════════════════════════════════
 // DESIGN TOKENS
@@ -26,41 +29,49 @@ const C = {
   textMuted:   "#5e7e60",
   amber:       "#c4961a",
   red:         "#c04a38",
-  redLight:    "#e06050",
   white:       "#ffffff",
+  gohuntOrange:"#f26522",
 };
+
+// Fix Leaflet default marker icon issue with bundlers
+import L from "leaflet";
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
 
 const FONT_URL =
   "https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap";
 
 // ═══════════════════════════════════════════════════════════════
 // INTEGRATION ADAPTER REGISTRY
-// Future GoHunt / HuntWise connections plug in here.
-// Each adapter declares its status and the methods it will expose.
 // ═══════════════════════════════════════════════════════════════
 const INTEGRATIONS = {
   gohunt: {
     id:          "gohunt",
     name:        "GoHunt",
     logoInitial: "G",
-    tagline:     "Draw odds, harvest stats, and detailed unit profiles",
+    tagline:     "Draw odds, harvest stats, full unit profiles, and scouting maps",
     website:     "https://www.gohunt.com",
-    status:      "planned",  // "active" | "planned" | "error"
-    dataTypes:   ["Draw Odds", "Unit Profile", "Harvest Stats", "Weather Overlays"],
-    // Adapter interface — implement when live:
-    connect:           async () => { throw new Error("Not implemented"); },
-    fetchUnitProfile:  async (unitId, year) => null,
+    status:      "partial", // public data sourced; full API pending membership
+    dataTypes:   ["Unit Stats", "Quick Tips", "Terrain Narrative", "Lodging", "Draw Odds (Insider)", "Weather Overlays (Insider)"],
+    profileBase: "https://www.gohunt.com/tools/profiles/colorado/units/big-game-unit-",
+    // Adapter interface — implement when Insider API key available:
+    connect:           async () => { throw new Error("Requires GoHunt Insider subscription"); },
     fetchDrawOdds:     async (unitId, residency) => null,
     fetchHarvestStats: async (unitId) => null,
+    fetchWeather:      async (lat, lng, date) => null,
   },
   huntwise: {
     id:          "huntwise",
     name:        "HuntWise",
     logoInitial: "H",
-    tagline:     "Scouting layers, weather, moon phases, and wind forecasts",
+    tagline:     "Scouting layers, wind forecasts, moon phases, and pressure maps",
     website:     "https://huntwise.com",
     status:      "planned",
-    dataTypes:   ["Weather Forecast", "Scouting Layers", "Moon Phase", "Wind Direction"],
+    dataTypes:   ["Weather Forecast", "Scouting Layers", "Moon Phase", "Wind Direction", "Pressure Maps"],
     connect:            async () => { throw new Error("Not implemented"); },
     fetchWeather:       async (lat, lng, date) => null,
     fetchScoutingLayers: async (unitId) => null,
@@ -68,7 +79,7 @@ const INTEGRATIONS = {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// UNIT DATA
+// UNIT DATA  —  stats & narratives sourced from GoHunt (Apr 2026)
 // ═══════════════════════════════════════════════════════════════
 const UNITS = [
   {
@@ -82,96 +93,107 @@ const UNITS = [
     counties:     ["Routt", "Rio Blanco", "Moffat"],
     state:        "CO",
     forest:       "White River & Routt National Forests",
-    elevation:    [5800, 12200],
-    coords:       { lat: 40.15, lng: -107.5 },
+    // GoHunt At a Glance
+    sqMiles:      675,
+    publicPct:    52.8,
+    elevation:    [6239, 12000],
+    coords:       { lat: 40.15, lng: -107.5, zoom: 9 },
+    gohuntSlug:   "12",
     draw:         "moderate",
     antler:       "4 pts on one antler OR 5\" brow tine",
+    // GoHunt Quick Tips
+    quickTips: [
+      "Bears can cause problems — hang or secure all food",
+      "Expect rapid weather changes — layers and rain gear mandatory",
+      "Good trout fishing in rivers, creeks, and many lakes",
+      "No vehicles allowed in Monument Butte or Flat Tops Wilderness",
+      "4WD with tire chains recommended on primitive roads",
+      "ATVs recommended — heavy ATV traffic on the west portion",
+    ],
     highlights: [
-      "Highest elk harvest numbers of any unit in Colorado",
-      "Resident herd estimated 38,000–42,000 elk",
-      "Flat Tops Wilderness: ~20,000 acres (SE corner, foot/horse only)",
+      "More elk harvested here than any other unit in Colorado",
+      "675 sq mi · 52.8% public land · elevations 6,239–12,000 ft",
+      "Flat Tops Wilderness: ~20,000 acres in SE corner (foot/horse only)",
       "Most realistic draw prospect on your 2026 application",
     ],
+    // GoHunt narrative
     terrain: {
       summary:
-        "Diverse unit. Private river bottoms and mild foothills in the north transition south into forested canyons, flattened ridges, and moderately steep mountains with patches above timberline. Meadows scattered throughout.",
+        "Topography varies from mostly private river bottoms and mild foothills in the north to forested canyons and flattened ridges in the White River and Routt National Forests, to moderately steep mountains that reach slightly above timberline. Many meadows are scattered throughout the mountains and foothills. Private ranches between Hamilton and Pagoda are along a broad river bottom and slowly rising foothills with many benches and gulches. Part of Axial Basin with many gulches and dry washes draining steep ridges is in the west. Roughly 20,000 acres of the Flat Tops Wilderness, which is flat enough to support many small lakes, are in the southeast corner.",
       vegetation: [
-        "Cottonwoods and willows along creek bottoms",
-        "Sagebrush, bitterbrush, oak brush, pinyon/juniper below 8,000 ft",
-        "Mountain mahogany, bunchgrass, and aspen above 8,000 ft",
-        "Lodgepole pine, spruce, and fir at upper elevations",
-        "Open meadows and dark timber throughout Routt NF",
+        "Cottonwoods and willows along rivers and creek bottoms",
+        "NW corner: hay meadows, sagebrush, bitterbrush, oak brush, pinyon, juniper",
+        "Above 8,000 ft: bunchgrass, needle grass, wheatgrass, oak brush, mountain mahogany",
+        "Aspen groves and lodgepole pine, spruce, and fir forests at elevation",
+        "High basins: spruce strands, grasses, columbine, Indian paintbrush, lupine",
       ],
       features: [
-        "Flat Tops Wilderness — peaks to 12,200 ft, alpine lakes",
+        "Flat Tops Wilderness — peaks to 12,000 ft, small alpine lakes, no motors",
         "Morapos Creek watershed — 8,000–10,000 ft, productive public land",
+        "Axial Basin — western edge, gulches and dry washes off steep ridges",
         "Williams Fork River corridor",
-        "Axial Basin — western edge, sagebrush and dry washes",
       ],
-      slope: "Moderately steep on public land. Plateau top gives way to steep canyon walls in drainages.",
+      slope: "Moderately steep across public land. Plateau top flattens above timberline. Private valley bottoms rise into steep canyon walls in major drainages.",
     },
     access: {
       summary:
-        "Northern half predominantly private with BLM/state parcels surrounded by deeded ground. Southern portion is substantial public land via Routt and White River NF. Roads above 8,000 ft can be impassable by late October.",
+        "The large unit is comprised of an even mixture of public and private lands. During earlier seasons hunters find good opportunities at higher elevations. As snow arrives for later seasons and game is pushed to lower elevations, access issues arise as many low areas are private land.",
       publicAreas: [
         "Jensen State Wildlife Area — 5,955 acres",
         "Indian Run State Wildlife Area — 2,039 acres",
         "Morapos Creek State Trust — 640 acres",
-        "Monument Butte State Trust — 653 acres",
+        "Monument Butte State Trust — 653 acres (no motorized access)",
         "Iles Grove State Trust — 2,079 acres",
-        "Flat Tops Wilderness — ~20,000 acres, no motorized access",
+        "Flat Tops Wilderness — ~20,000 acres, foot/horse only",
       ],
       routes: [
         "Rio Blanco County Rd 8 → White River NF / Morapos trailheads",
-        "Routt County Rd 17 → eastern NF access",
+        "Routt County roads → eastern NF access",
         "US-13 N from Meeker → primary unit entry",
         "US-40 W from Craig → northwest access",
+        "USFS Road 16 → Vaughn Lake Campground area",
       ],
       notes: [
-        "Heavy ATV traffic on west portion — hike deeper for less pressure",
-        "Motorized travel limited to designated routes in NF",
-        "Private land boundaries critical in north half — use onX",
-        "Hunters 3–4+ miles from trailheads see significantly reduced competition",
+        "Heavy ATV traffic on west portion — hike deeper for less competition",
+        "Mostly private land in north half — use onX for boundary verification",
+        "Remote wilderness in the southeast — least pressure, highest reward",
+        "Roads above 8,000 ft can become impassable by late October",
+        "Hunters 3–4+ miles from trailheads see significantly less competition",
       ],
     },
     directions: {
       fly: {
         airport:   "Denver International (DEN)",
         driveTime: "3.5–4 hrs",
-        route:
-          "DEN → I-70 W to Rifle (Exit 90) → US-13 N to Meeker (52 mi). Optionally continue US-40 W to Craig (30 mi from Meeker).",
+        route:     "DEN → I-70 W to Rifle (Exit 90) → US-13 N to Meeker (52 mi). Continue US-40 W to Craig (30 mi) or stay in Meeker.",
       },
       drive: {
         distance: "~1,850 mi",
         time:     "~26 hrs",
-        route:
-          "I-40 W → I-25 N through Albuquerque → US-550 N → US-50 W → I-70 W → US-40 W to Craig",
+        route:    "I-40 W → I-25 N (Albuquerque) → US-550 N → US-50 W → I-70 W → US-40 W to Craig",
       },
     },
+    // GoHunt lodging data
     lodging: {
       hubs: [
-        {
-          name: "Craig, CO",
-          badge: "Primary",
-          note: "'Elk Hunting Capital of the World.' Full services: motels, restaurants, meat processors, fuel.",
-          dist: "0–30 min",
-        },
-        {
-          name: "Meeker, CO",
-          badge: "Secondary",
-          note: "20 mi south of Craig. Central to GMUs 12, 23, and 24. Motel-style lodging.",
-          dist: "15–45 min",
-        },
+        { name: "Craig, CO",  badge: "Primary",   note: "'Elk Hunting Capital of the World.' Full services: motels, restaurants, meat processors, fuel.", dist: "0–30 min" },
+        { name: "Meeker, CO", badge: "Secondary", note: "20 mi south of Craig. Central to GMUs 12, 23, and 24. Motel-style lodging.", dist: "15–45 min" },
+      ],
+      campgrounds: [
+        "Vaughn Lake Campground (USFS Rd 16) — open early June through October, weather permitting",
+        "Dispersed camping allowed almost anywhere on federal land",
+        "Designated areas in Indian Run and Jensen State Wildlife Areas",
       ],
       options: [
-        "Tunatua RV Resort (Craig) — hunter-friendly RV basecamp, full hookups",
         "The Elk Ranch — private lodge cabin between Craig and Meeker on GMU 12 private land",
-        "Yellow Jacket Ranch Cabins (Horn & Fin Outfitters) — 10,000-acre ranch, meals and lodging",
-        "Wild Skies Cabins — unguided cabin lodging in Routt NF, Flat Tops",
-        "Multiple outfitter drop camps available throughout Routt NF",
+        "Wild Skies Cabins — unguided cabin lodging in Routt NF, Flat Tops, up to 12 hunters",
+        "Yellow Jacket Ranch (Horn & Fin Outfitters) — 10,000-acre ranch, meals and lodging",
+        "Multiple outfitter drop camps throughout Routt and White River NF",
+        "Craig motels — closest option for modern lodging outside the unit",
       ],
     },
   },
+
   {
     id:           "GMU-62",
     displayName:  "GMU 62",
@@ -183,102 +205,105 @@ const UNITS = [
     counties:     ["Delta", "Mesa", "Montrose", "Ouray"],
     state:        "CO",
     forest:       "Uncompahgre National Forest / BLM",
-    elevation:    [4700, 10300],
-    coords:       { lat: 38.65, lng: -108.2 },
+    // GoHunt At a Glance
+    sqMiles:      1376,
+    publicPct:    69.5,
+    elevation:    [4500, 10300],
+    coords:       { lat: 38.65, lng: -108.2, zoom: 9 },
+    gohuntSlug:   "62",
     draw:         "low-moderate",
     antler:       "4 pts on one antler OR 5\" brow tine",
+    quickTips: [
+      "Carry a winch and four tire chains in case of snow or mud",
+      "Be prepared to pack out your game — remote canyon country",
+      "Hike in the dark to likely hunting spots to be in place at first light",
+      "Expect to see bears in September — secure all food and camp",
+      "Some rangers are strict enforcing campground rules",
+      "Snowstorms in October and November can strand hunters",
+    ],
     highlights: [
       "Shares the Uncompahgre Plateau with Trophy Unit 61",
-      "Healthy elk populations with more attainable tags than neighboring units",
-      "Fly direct into Montrose Regional Airport (MTJ)",
-      "Rut can begin as early as first week of September",
+      "1,376 sq mi · 69.5% public land · 4,500–10,300 ft elevation",
+      "Fly direct into Montrose Regional Airport (MTJ) — 30–60 min to the plateau",
+      "Rut begins as early as first week of September",
     ],
     terrain: {
       summary:
-        "Flat-top mountain range primarily between 8,300–9,200 ft. Steep remote canyons on the flanks. Good road access on the plateau top; many roads become impassable in wet weather.",
+        "This unit draws a great deal of attention because it shares the Uncompahgre Plateau with Unit 61, which is famous for producing high success rates on big mule deer and elk. Though Unit 62 doesn't produce nearly as many big bulls and bucks as 61, it offers healthy numbers and tags are much easier to get. The Uncompahgre Plateau is a flat-top mountain range ranging mostly between 8,300 and 9,200 feet, stretching about 90 miles northwest to southeast. The plateau drops into huge canyons, some of them ruggedly steep, overlooking lowlands from 4,500–5,500 feet in elevation. The highest point is 10,300-foot Horsefly Peak.",
       vegetation: [
-        "Sagebrush and scrub oak at lower elevations",
-        "Aspen groves and dark timber on the plateau",
-        "Oak brush and juniper on canyon walls and slopes",
-        "Pinyon-juniper on lower canyon flanks",
-        "Open grassy meadows across the plateau top",
+        "Low elevations: sagebrush, croplands, pastures, willows, and cottonwoods",
+        "Middle elevations: pinyon-juniper forest, sage openings, dense oakbrush, cliffrose, bitterbrush",
+        "High elevations: grassy parks surrounded by fir, spruce, and broad aspen forests",
+        "Some aspen forests several miles wide where the plateau stretches west to east",
+        "Occasional firs and aspen patches mixed into oakbrush at mid-elevation",
       ],
       features: [
         "Horsefly Peak — 10,300 ft high point",
-        "Divide Road (USFS Rd 402) — splits GMU 62 (NE) from GMU 61 (SW)",
-        "Rubideau Creek drainage — productive canyon habitat",
-        "Trevor Trail access corridor",
-        "Remote canyon systems with steep descents",
+        "Divide Road (USFS Rd 402) — north-south spine, splits GMU 62 (NE) from GMU 61 (SW)",
+        "Plateau top — 8,300–9,200 ft, good road access across the top",
+        "Canyon lowlands — 4,500–5,500 ft, ruggedly steep, private land blocks canyon access from below",
+        "Rubideau Creek and Potter Canyon drainages",
       ],
-      slope: "Steep overall — 80% of public land has slopes ≤27°. Plateau top is forgiving; canyon country is rugged.",
+      slope: "Very steep canyon walls flanking the plateau. 80% of public land has slopes ≤27°. Plateau top is relatively forgiving; canyon descents are serious undertakings.",
     },
     access: {
       summary:
-        "Good road access across the plateau top via Mesa 25 Road and USFS Rd 402. Lower canyon access is limited and 4WD-dependent. Private land borders eastern canyon sections.",
+        "Good public road access across the plateau top. Much public road access available, with a lot of ATV trails — though no off-road riding is allowed. Private lands block access to many canyons from below. Some roads become impassable with mud or snow. Snowstorms in October and November can strand hunters.",
       publicAreas: [
         "Uncompahgre National Forest — majority of plateau",
         "BLM dispersed land below the mesa (late-season camping)",
-        "Public access along Divide Road corridor",
+        "Iron Springs Campground (closes October)",
+        "Divide Forks Campground (closes November)",
       ],
       routes: [
-        "Mesa 25 Road W from Delta → main plateau access",
-        "USFS Rd 402 (Divide Road) — north-south spine of plateau",
+        "Divide Road (USFS Rd 402) — south end: ~15 mi west of Ridgway · north end: ~5 mi SE of Grand Junction",
+        "Mesa 25 Road W from Delta → main northern plateau access",
         "Hwy 90 from Montrose → southern plateau entry",
-        "Hwy 62 from Ouray → southeastern access",
+        "Hwy 62 from Ouray/Ridgway → southeastern access",
       ],
       notes: [
-        "Early season: camp along primitive roads on plateau top",
+        "Early season: camp along primitive roads on the plateau top",
         "Late season: camp on BLM land below the mesa as elk descend",
-        "Hunting pressure highest near roads — drop into canyons for less competition",
-        "Horses recommended for canyon hunting — pack-out is challenging",
-        "Verify eastern canyon access with onX; private land present",
+        "Private lands block canyon access from below — enter from plateau top",
+        "Horses strongly recommended for canyon hunting — pack-out is serious",
+        "ATV trails available but off-road riding not permitted",
+        "Verify eastern canyon access boundaries with onX before committing",
       ],
     },
     directions: {
       fly: {
         airport:   "Montrose Regional (MTJ)",
         driveTime: "30–60 min",
-        route:
-          "MTJ → US-50 W through Delta → Hwy 90 W onto plateau, or north via Hwy 141. Direct flights from PHX, DEN, and DAL.",
-        note: "Best fly-in option of your three units.",
+        route:     "MTJ → US-50 W through Delta → Hwy 90 W onto plateau, or north via Hwy 141. Direct flights from PHX, DEN, and DAL.",
+        note:      "Best fly-in option of your three units.",
       },
       drive: {
         distance: "~1,700 mi",
         time:     "~24 hrs",
-        route:
-          "I-40 W → I-25 N (Albuquerque) → US-550 N through Durango and Ouray → US-50 E to Montrose",
+        route:    "I-40 W → I-25 N (Albuquerque) → US-550 N through Durango and Ouray → US-50 E to Montrose",
       },
     },
     lodging: {
       hubs: [
-        {
-          name:  "Montrose, CO",
-          badge: "Primary",
-          note:  "Primary base with direct airport access (MTJ). Full services. 30–60 min to plateau hunting areas.",
-          dist:  "30–60 min",
-        },
-        {
-          name:  "Delta, CO",
-          badge: "Secondary",
-          note:  "Closer to northern plateau access via Mesa 25 Road. Smaller town with basic services.",
-          dist:  "20–40 min",
-        },
-        {
-          name:  "Grand Junction, CO",
-          badge: "Overflow",
-          note:  "Largest city in the region, 60 mi north. More lodging options but further from unit.",
-          dist:  "60–80 min",
-        },
+        { name: "Montrose, CO",     badge: "Primary",   note: "Direct airport (MTJ). Full services. 30–60 min to plateau hunting areas.", dist: "30–60 min" },
+        { name: "Delta, CO",        badge: "Secondary", note: "Closer to northern plateau access via Mesa 25 Road. Basic services.", dist: "20–40 min" },
+        { name: "Grand Junction, CO", badge: "Overflow", note: "Largest regional city, 60 mi north. More lodging but further from unit.", dist: "60–80 min" },
+      ],
+      campgrounds: [
+        "Iron Springs Campground (USFS) — closes in October",
+        "Divide Forks Campground (USFS) — closes in November",
+        "Dispersed primitive camping on plateau roads (early season)",
+        "BLM dispersed camping below the mesa (late season — free)",
       ],
       options: [
-        "Western Colorado Outfitters base camp — guided/semi-guided, GMU 62 National Forest permit area",
-        "Dark Timber Lodge — fully outfitted hunts in Units 61 and 62, meals and lodging included",
-        "Primitive road camping on plateau top (early season)",
-        "BLM dispersed camping below mesa (late season — free)",
+        "Western Colorado Outfitters base camp — guided/semi-guided, GMU 62 USFS permit area",
+        "Dark Timber Lodge — fully outfitted hunts in Units 61 and 62, meals and lodging",
         "Various motels in Montrose and Delta for town-based base camping",
+        "Grand Junction for larger hotel selection with longer daily commute",
       ],
     },
   },
+
   {
     id:           "GMU-79",
     displayName:  "GMU 79",
@@ -290,55 +315,67 @@ const UNITS = [
     counties:     ["Mineral", "Rio Grande", "Saguache"],
     state:        "CO",
     forest:       "Rio Grande National Forest",
-    elevation:    [7500, 14000],
-    coords:       { lat: 37.8, lng: -106.5 },
+    // GoHunt At a Glance
+    sqMiles:      420,
+    publicPct:    75,
+    elevation:    [7683, 12063],
+    coords:       { lat: 37.8, lng: -106.5, zoom: 9 },
+    gohuntSlug:   "79",
     draw:         "high",
-    antler:       "4 pts on one antler OR 5\" brow tine (corridor exception near Del Norte/Monte Vista for damage tags ONLY)",
+    antler:       "4 pts on one antler OR 5\" brow tine (corridor exception applies to damage tags ONLY)",
+    quickTips: [
+      "Let optics cover the country for you — glass extensively before moving",
+      "Be mobile and willing to move camp to follow elk",
+      "Hunt away from roads and main trails to reduce competition",
+      "Expect to see other hunters — high non-resident pressure",
+      "Hunt low in cold, snowy weather as elk descend to valley floor",
+    ],
     highlights: [
-      "San Luis Valley spans 8,000 square miles of dramatic terrain",
+      "San Luis Valley — 8,000 square miles of dramatic high-desert terrain",
+      "420 sq mi · 75% public land · 7,683–12,063 ft elevation",
       "Sangre de Cristo Mountains define the rugged eastern boundary",
-      "La Garita Wilderness accessible within unit boundaries",
-      "Sand Dunes elk herd estimated at 5,000–6,000+ animals",
+      "Sand Dunes elk herd: 5,000–6,000+ animals",
     ],
     terrain: {
       summary:
-        "Vast high-desert valley flanked by Sangre de Cristo Mountains (east) and San Juan Mountains (west). Elevations range from 7,500 ft valley floor to 14,000 ft peaks. Highly varied: open sagebrush flats to rugged alpine terrain.",
+        "Where the eastern plains meet the Rockies northwest of Alamosa, this unit has elk, deer and a few antelope. Elevations are mostly between 8,000 and 10,000 feet, with lows at 7,500 feet and some peaks exceeding 12,000 feet. Much of the unit is covered in high ridges between creek drainages. The eastern third is mostly flat with gentle foothills. Much of the low terrain in the east is private agricultural land.",
       vegetation: [
-        "Sagebrush, grass, pinyon, and juniper at valley floor elevations",
-        "High ridges between creek drainages at mid-elevation",
-        "Spruce-fir forests on upper mountain slopes",
-        "Aspen groves in mid-elevation drainages",
-        "Alpine tundra above 12,000 ft",
+        "Low elevations: sagebrush, grass, pinyon pines, juniper, agricultural fields, scattered cottonwoods along creeks",
+        "Middle elevations: slopes heavily forested with spruce and fir, large scattered aspen groves",
+        "Ridge tops: flats covered with grass and wildflowers",
+        "High elevations: grass, wildflowers, and loose rock scrabble on steep slopes",
+        "Valley floor: agricultural fields and irrigated ranch land",
       ],
       features: [
         "Sangre de Cristo Mountains — steep and rugged eastern boundary",
         "La Garita Wilderness — roadless, foot/horse access only",
-        "Rio Grande River corridor",
+        "Rio Grande River corridor along southern boundary",
         "La Garita Driveway (ATV trail) — western unit access",
-        "USFS Roads 600 and 600-3A — primary forest access routes",
+        "USFS Roads 600 and 600-3A — primary forest access",
       ],
-      slope: "Very steep on public land — 80% of area has slopes ≤24°. Valley floor is flat but elk concentrate in the mountains.",
+      slope: "Very steep on public land — 80% of area has slopes ≤24°. Valley floor is flat but elk concentrate up in the mountains away from agricultural land.",
     },
     access: {
       summary:
-        "Good public road access across much of the unit with primitive 4WD roads branching higher. Eastern side limited by private agricultural land. Access ranges from moderate to very difficult depending on depth.",
+        "Much of the unit has good public road access. A few well-maintained roads branch into primitive four-wheel-drive roads and ATV trails. Some routes are impassable in wet or snowy weather. Private land limits access on the eastern side of the unit.",
       publicAreas: [
         "Rio Grande National Forest — primary public land block",
         "La Garita Wilderness — roadless, foot/horse only",
-        "BLM scattered parcels across valley floor",
+        "BLM scattered parcels across unit",
+        "75% of unit is public land",
       ],
       routes: [
         "US-285 — eastern boundary corridor",
-        "US-160 — southern boundary, main highway",
+        "US-160 — southern boundary, main highway from Del Norte",
         "County Hwy 149 — western and northern forest access",
         "USFS Road 600 → upper forest and La Garita access",
-        "La Garita Driveway (ATV trail) — western unit access",
+        "La Garita Driveway (ATV trail) — western unit",
       ],
       notes: [
         "Private agricultural land limits eastern access — verify all boundaries with onX",
         "4WD and ATV strongly recommended for upper-elevation routes",
         "Some routes impassable in wet or snowy weather",
-        "Elk push into mountains away from valley floor — plan for hiking",
+        "Elk push into mountains away from valley floor — plan for substantial hiking",
         "Antler restriction corridor exception between Del Norte and Monte Vista applies to DAMAGE TAGS ONLY — not your hunt code",
       ],
     },
@@ -346,213 +383,228 @@ const UNITS = [
       fly: {
         airport:   "Alamosa (ALS) or Denver (DEN)",
         driveTime: "ALS: 30–45 min · DEN: ~3.5 hrs",
-        route:
-          "DEN → I-25 S → US-160 W (Walsenburg) → Monte Vista or Del Norte. Alternatively, fly ALS via regional carriers for closer access.",
+        route:     "DEN → I-25 S → US-160 W (Walsenburg) → Monte Vista / Del Norte. Or fly ALS via regional carriers for closer access.",
       },
       drive: {
         distance: "~1,600 mi",
         time:     "~23 hrs",
-        route:
-          "I-40 W → I-25 N (Albuquerque) → US-285 N → Alamosa / Monte Vista corridor",
+        route:    "I-40 W → I-25 N (Albuquerque) → US-285 N → Alamosa / Monte Vista corridor",
       },
     },
+    // GoHunt named lodging
     lodging: {
       hubs: [
-        {
-          name:  "Monte Vista, CO",
-          badge: "Primary",
-          note:  "Primary hotel town for GMU 79. Closest town with lodging to the unit hunting areas.",
-          dist:  "15–45 min",
-        },
-        {
-          name:  "Del Norte, CO",
-          badge: "Secondary",
-          note:  "On the US-160 corridor. Small town with basic services.",
-          dist:  "20–50 min",
-        },
-        {
-          name:  "Alamosa, CO",
-          badge: "Full Services",
-          note:  "Largest nearby city. Regional airport (ALS), meat processing, full hotel selection.",
-          dist:  "45–60 min",
-        },
+        { name: "Monte Vista, CO", badge: "Primary",       note: "Primary hotel town for GMU 79. Closest lodging to unit hunting areas.", dist: "15–45 min" },
+        { name: "Del Norte, CO",   badge: "Secondary",     note: "On the US-160 corridor. Small town with basic services.", dist: "20–50 min" },
+        { name: "Alamosa, CO",     badge: "Full Services", note: "Regional airport (ALS), meat processing, full hotel selection.", dist: "45–60 min" },
+      ],
+      campgrounds: [
+        "High-elevation dispersed camping along public roads (most common option)",
+        "Rio Grande National Forest dispersed camping — free, primitive, no hookups",
       ],
       options: [
-        "Most hunters camp along high-elevation roads on public ground — limited hotel supply",
-        "Monte Vista motels — limited selection, book early during season",
-        "Alamosa provides full services: lodging, meat processing, and regional airport",
-        "BBB Outfitters — San Luis Valley outfitter with access to private hunt lands",
-        "Rio Grande National Forest dispersed camping (free, primitive)",
+        "The Windsor Hotel — Del Norte (GoHunt listed)",
+        "Monte Villa Inn — Monte Vista (GoHunt listed)",
+        "Applelodge Bed & Breakfast — Monte Vista (GoHunt listed)",
+        "Best Western Movie Manor — Monte Vista area (GoHunt listed)",
+        "BBB Outfitters — private land hunt packages in the San Luis Valley",
       ],
     },
   },
 ];
 
 // ═══════════════════════════════════════════════════════════════
-// HELPERS
+// CONFIG
 // ═══════════════════════════════════════════════════════════════
 const DRAW_CONFIG = {
-  "high":        { label: "Hard Draw",     color: C.red,   bg: "#2a1210" },
-  "moderate":    { label: "Moderate",      color: C.amber, bg: "#2a2010" },
-  "low-moderate":{ label: "Low–Moderate",  color: C.green, bg: "#102a18" },
+  "high":         { label: "Hard Draw",    color: "#c04a38", bg: "#2a1210" },
+  "moderate":     { label: "Moderate",     color: "#c4961a", bg: "#2a2010" },
+  "low-moderate": { label: "Low–Moderate", color: "#4a9a5a", bg: "#102a18" },
 };
-
 const CHOICE_CONFIG = {
-  2: { label: "2nd", color: C.red },
-  3: { label: "3rd", color: C.amber },
-  4: { label: "4th", color: C.green },
+  2: { label: "2nd", color: "#c04a38" },
+  3: { label: "3rd", color: "#c4961a" },
+  4: { label: "4th", color: "#4a9a5a" },
 };
-
 const TABS = [
   { id: "overview",     label: "Overview",     Icon: Layers },
   { id: "terrain",      label: "Terrain",      Icon: Mountain },
   { id: "access",       label: "Access",       Icon: TreePine },
   { id: "directions",   label: "Directions",   Icon: Compass },
   { id: "lodging",      label: "Lodging",      Icon: Home },
+  { id: "waypoints",    label: "Waypoints",    Icon: MapPin },
+  { id: "map",          label: "Map",          Icon: Map },
   { id: "integrations", label: "Integrations", Icon: Plug },
 ];
 
-// ═══════════════════════════════════════════════════════════════
-// SUB-COMPONENTS
-// ═══════════════════════════════════════════════════════════════
+// Waypoint categories
+const WAYPOINT_CATEGORIES = {
+  camp:     { label: "Camp",          color: "#c47f20", icon: "⛺" },
+  water:    { label: "Water Source",  color: "#4a9aff", icon: "💧" },
+  glassing: { label: "Glassing Spot", color: "#4a9a5a", icon: "👁️" },
+  trail:    { label: "Trail Access",  color: "#98b898", icon: "🥾" },
+  parking:  { label: "Parking",       color: "#8a5a14", icon: "🚗" },
+  danger:   { label: "Caution",       color: "#c04a38", icon: "⚠️" },
+  other:    { label: "Other",         color: "#c4961a", icon: "📍" },
+};
 
-function Card({ children, style = {}, as: Tag = "div", ...props }) {
+// Map layer options
+const MAP_LAYERS = {
+  tracestrack: {
+    id: "tracestrack",
+    name: "Tracestrack Topo",
+    description: "High-quality topographic maps optimized for outdoor activities",
+    url: "https://tile.tracestrack.com/topo__/{z}/{x}/{y}.png",
+    attribution: 'Map: <a href="https://www.tracestrack.com/">Tracestrack</a> | <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+    maxZoom: 18,
+  },
+  usgs: {
+    id: "usgs",
+    name: "USGS Topographic",
+    description: "Classic USGS quad maps with contours",
+    url: "https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}",
+    attribution: 'Map data: <a href="https://www.usgs.gov/">USGS</a>',
+    maxZoom: 16,
+  },
+  satellite: {
+    id: "satellite",
+    name: "Satellite Imagery",
+    description: "High-resolution aerial/satellite photos",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    attribution: 'Imagery: <a href="https://www.esri.com/">Esri</a>',
+    maxZoom: 19,
+  },
+  esriTopo: {
+    id: "esriTopo",
+    name: "ESRI World Topo",
+    description: "Modern topo with trails and boundaries",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+    attribution: 'Map data: <a href="https://www.esri.com/">Esri</a>',
+    maxZoom: 19,
+  },
+  openTopo: {
+    id: "openTopo",
+    name: "OpenTopoMap",
+    description: "European-style topo with contour lines",
+    url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+    attribution: 'Map: <a href="https://opentopomap.org">OpenTopoMap</a>',
+    maxZoom: 17,
+  },
+  terrain: {
+    id: "terrain",
+    name: "Terrain Hillshade",
+    description: "3D terrain shading to visualize slopes",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}",
+    attribution: 'Terrain: <a href="https://www.esri.com/">Esri</a>',
+    maxZoom: 13,
+  },
+  usgsImagery: {
+    id: "usgsImagery",
+    name: "USGS Imagery Topo",
+    description: "Satellite imagery with topo overlay",
+    url: "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}",
+    attribution: 'Map data: <a href="https://www.usgs.gov/">USGS</a>',
+    maxZoom: 16,
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════
+// SHARED SUB-COMPONENTS
+// ═══════════════════════════════════════════════════════════════
+function Card({ children, style = {} }) {
   return (
-    <Tag
-      style={{
-        background: C.card,
-        border: `1px solid ${C.border}`,
-        borderRadius: 8,
-        padding: "16px 20px",
-        ...style,
-      }}
-      {...props}
-    >
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: "16px 20px", ...style }}>
       {children}
-    </Tag>
+    </div>
   );
 }
-
 function SectionLabel({ children }) {
   return (
-    <p
-      style={{
-        fontFamily: "'IBM Plex Mono', monospace",
-        fontSize: 10,
-        letterSpacing: "0.15em",
-        textTransform: "uppercase",
-        color: C.textMuted,
-        margin: "0 0 10px",
-      }}
-    >
+    <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: C.textMuted, margin: "0 0 10px" }}>
       {children}
     </p>
   );
 }
-
 function BulletList({ items, icon: Icon, iconColor = C.accent }) {
   return (
     <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 8 }}>
       {items.map((item, i) => (
         <li key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-          {Icon ? (
-            <Icon size={14} style={{ color: iconColor, flexShrink: 0, marginTop: 3 }} aria-hidden="true" />
-          ) : (
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: iconColor, flexShrink: 0, marginTop: 7 }} aria-hidden="true" />
-          )}
+          {Icon
+            ? <Icon size={14} style={{ color: iconColor, flexShrink: 0, marginTop: 3 }} aria-hidden="true" />
+            : <span style={{ width: 6, height: 6, borderRadius: "50%", background: iconColor, flexShrink: 0, marginTop: 7 }} aria-hidden="true" />
+          }
           <span style={{ fontSize: 14, color: C.text, lineHeight: 1.55 }}>{item}</span>
         </li>
       ))}
     </ul>
   );
 }
-
 function Badge({ label, color, bg }) {
   return (
-    <span
-      style={{
-        display: "inline-block",
-        padding: "2px 8px",
-        borderRadius: 4,
-        background: bg || `${color}22`,
-        color,
-        fontSize: 11,
-        fontFamily: "'IBM Plex Mono', monospace",
-        fontWeight: 500,
-        letterSpacing: "0.05em",
-        border: `1px solid ${color}44`,
-      }}
-    >
+    <span style={{
+      display: "inline-block", padding: "2px 8px", borderRadius: 4,
+      background: bg || `${color}22`, color, fontSize: 11,
+      fontFamily: "'IBM Plex Mono', monospace", fontWeight: 500,
+      letterSpacing: "0.05em", border: `1px solid ${color}44`,
+    }}>
       {label}
     </span>
   );
 }
-
-// ── TABS ──────────────────────────────────────────────────────
-function TabBar({ activeTab, onChange }) {
-  const tabRefs = useRef({});
-
-  const handleKeyDown = (e, tabId, idx) => {
-    const ids = TABS.map(t => t.id);
-    if (e.key === "ArrowRight") {
-      const next = TABS[(idx + 1) % TABS.length];
-      onChange(next.id);
-      tabRefs.current[next.id]?.focus();
-    } else if (e.key === "ArrowLeft") {
-      const prev = TABS[(idx - 1 + TABS.length) % TABS.length];
-      onChange(prev.id);
-      tabRefs.current[prev.id]?.focus();
-    }
-  };
-
+function GoHuntBadge({ slug }) {
   return (
-    <div
-      role="tablist"
-      aria-label="Unit detail sections"
+    <a
+      href={`${INTEGRATIONS.gohunt.profileBase}${slug}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`View GMU ${slug} on GoHunt (opens in new tab)`}
       style={{
-        display: "flex",
-        borderBottom: `1px solid ${C.border}`,
-        overflowX: "auto",
-        scrollbarWidth: "none",
-        flexShrink: 0,
+        display: "inline-flex", alignItems: "center", gap: 5,
+        padding: "3px 9px", borderRadius: 4,
+        background: `${C.gohuntOrange}18`, border: `1px solid ${C.gohuntOrange}44`,
+        color: C.gohuntOrange, fontSize: 11,
+        fontFamily: "'IBM Plex Mono', monospace", textDecoration: "none",
+        letterSpacing: "0.04em",
       }}
     >
+      <ExternalLink size={11} aria-hidden="true" />
+      GoHunt Profile
+    </a>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════════════
+function TabBar({ activeTab, onChange }) {
+  const tabRefs = useRef({});
+  const handleKeyDown = (e, idx) => {
+    if (e.key === "ArrowRight") { const n = TABS[(idx + 1) % TABS.length]; onChange(n.id); tabRefs.current[n.id]?.focus(); }
+    if (e.key === "ArrowLeft")  { const n = TABS[(idx - 1 + TABS.length) % TABS.length]; onChange(n.id); tabRefs.current[n.id]?.focus(); }
+  };
+  return (
+    <div role="tablist" aria-label="Unit detail sections"
+      style={{ display: "flex", borderBottom: `1px solid ${C.border}`, overflowX: "auto", scrollbarWidth: "none", flexShrink: 0 }}>
       {TABS.map(({ id, label, Icon }, idx) => {
         const active = activeTab === id;
         return (
-          <button
-            key={id}
-            id={`tab-${id}`}
-            role="tab"
-            aria-selected={active}
-            aria-controls={`panel-${id}`}
+          <button key={id} id={`tab-${id}`} role="tab" aria-selected={active} aria-controls={`panel-${id}`}
             tabIndex={active ? 0 : -1}
             ref={el => (tabRefs.current[id] = el)}
             onClick={() => onChange(id)}
-            onKeyDown={e => handleKeyDown(e, id, idx)}
+            onKeyDown={e => handleKeyDown(e, idx)}
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "12px 18px",
-              background: "none",
-              border: "none",
+              display: "flex", alignItems: "center", gap: 6, padding: "12px 18px",
+              background: "none", border: "none",
               borderBottom: active ? `2px solid ${C.accent}` : "2px solid transparent",
               color: active ? C.accent : C.textMuted,
-              fontFamily: "'Oswald', sans-serif",
-              fontSize: 13,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-              transition: "color 0.15s, border-color 0.15s",
-              outline: "none",
+              fontFamily: "'Oswald', sans-serif", fontSize: 13, letterSpacing: "0.08em",
+              textTransform: "uppercase", cursor: "pointer", whiteSpace: "nowrap",
+              transition: "color 0.15s", outline: "none",
             }}
-            onFocus={e => { e.currentTarget.style.boxShadow = `inset 0 -2px 0 ${C.accent}, 0 0 0 2px ${C.accent}44`; }}
-            onBlur={e => { e.currentTarget.style.boxShadow = "none"; }}
           >
-            <Icon size={14} aria-hidden="true" />
-            {label}
+            <Icon size={14} aria-hidden="true" />{label}
           </button>
         );
       })}
@@ -560,84 +612,98 @@ function TabBar({ activeTab, onChange }) {
   );
 }
 
-// ── TAB PANELS ────────────────────────────────────────────────
-
+// ═══════════════════════════════════════════════════════════════
+// TAB PANELS
+// ═══════════════════════════════════════════════════════════════
 function OverviewPanel({ unit }) {
   const draw = DRAW_CONFIG[unit.draw];
   const choice = CHOICE_CONFIG[unit.choiceRank];
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-      {/* Highlights */}
-      <Card style={{ gridColumn: "1 / -1" }}>
-        <SectionLabel>Unit Highlights</SectionLabel>
-        <BulletList items={unit.highlights} icon={Target} iconColor={C.accent} />
-      </Card>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-      {/* Draw Info */}
+      {/* GoHunt At a Glance */}
       <Card>
-        <SectionLabel>Draw Status</SectionLabel>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-            <Badge label={draw.label} color={draw.color} bg={draw.bg} />
-            <Badge label={`${choice.label} Choice`} color={choice.color} />
-          </div>
-          <p style={{ fontSize: 13, color: C.text, lineHeight: 1.6, margin: 0 }}>
-            <span style={{ fontFamily: "'IBM Plex Mono', monospace", color: C.accent }}>
-              {unit.huntCode}
-            </span>
-            {" · "}{unit.appLabel}
-          </p>
-          <p style={{ fontSize: 13, color: C.textSub, lineHeight: 1.6, margin: 0 }}>
-            {unit.draw === "moderate" && "First-year applicant odds are viable. Limited archery tag — check CPW brochure for special restrictions."}
-            {unit.draw === "low-moderate" && "Typically 2–3 preference points needed for early seasons. OTC available for archery and select rifle seasons."}
-            {unit.draw === "high" && "Competitive draw with limited non-resident tags. Challenging odds without accumulated preference points."}
-          </p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
+          <SectionLabel>At a Glance · GoHunt</SectionLabel>
+          <GoHuntBadge slug={unit.gohuntSlug} />
         </div>
-      </Card>
-
-      {/* Unit Stats */}
-      <Card>
-        <SectionLabel>Unit Stats</SectionLabel>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
           {[
-            { label: "Counties", value: unit.counties.join(", ") },
-            { label: "Elevation", value: `${unit.elevation[0].toLocaleString()}–${unit.elevation[1].toLocaleString()} ft` },
-            { label: "Primary Forest", value: unit.forest },
-            { label: "Antler Restriction", value: unit.antler },
+            { label: "Size",        value: `${unit.sqMiles.toLocaleString()} sq mi` },
+            { label: "Public Land", value: `${unit.publicPct}%` },
+            { label: "Elevation",   value: `${unit.elevation[0].toLocaleString()}–${unit.elevation[1].toLocaleString()} ft` },
           ].map(({ label, value }) => (
-            <div key={label} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <span style={{ fontSize: 10, color: C.textMuted, fontFamily: "'IBM Plex Mono', monospace", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                {label}
-              </span>
-              <span style={{ fontSize: 13, color: C.text, lineHeight: 1.5 }}>{value}</span>
+            <div key={label} style={{ background: C.surface, borderRadius: 6, padding: "12px 14px", border: `1px solid ${C.border}` }}>
+              <p style={{ fontSize: 10, color: C.textMuted, fontFamily: "'IBM Plex Mono', monospace", letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 4px" }}>{label}</p>
+              <p style={{ fontSize: 20, fontFamily: "'Oswald', sans-serif", color: C.accent, letterSpacing: "0.04em", margin: 0 }}>{value}</p>
             </div>
           ))}
         </div>
+        {/* Elevation bar */}
+        <div style={{ marginTop: 14 }}>
+          <div style={{ position: "relative", height: 8, background: C.surface, borderRadius: 4, overflow: "hidden", border: `1px solid ${C.border}` }}>
+            <div
+              aria-label={`Elevation range: ${unit.elevation[0].toLocaleString()} to ${unit.elevation[1].toLocaleString()} feet`}
+              style={{
+                position: "absolute",
+                left: `${((unit.elevation[0] - 4000) / (13000 - 4000)) * 100}%`,
+                width: `${((unit.elevation[1] - unit.elevation[0]) / (13000 - 4000)) * 100}%`,
+                height: "100%",
+                background: `linear-gradient(90deg, ${C.green}, ${C.accent})`,
+              }}
+            />
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
+            <span style={{ fontSize: 10, color: C.textMuted, fontFamily: "'IBM Plex Mono', monospace" }}>Low: {unit.elevation[0].toLocaleString()} ft</span>
+            <span style={{ fontSize: 10, color: C.textMuted, fontFamily: "'IBM Plex Mono', monospace" }}>High: {unit.elevation[1].toLocaleString()} ft</span>
+          </div>
+        </div>
       </Card>
 
-      {/* Elevation Bar */}
-      <Card style={{ gridColumn: "1 / -1" }}>
-        <SectionLabel>Elevation Profile</SectionLabel>
-        <div style={{ position: "relative", height: 12, background: C.surface, borderRadius: 6, overflow: "hidden" }}>
-          <div
-            aria-label={`Elevation range: ${unit.elevation[0].toLocaleString()} to ${unit.elevation[1].toLocaleString()} feet`}
-            style={{
-              position: "absolute",
-              left: `${((unit.elevation[0] - 4500) / (14500 - 4500)) * 100}%`,
-              width: `${((unit.elevation[1] - unit.elevation[0]) / (14500 - 4500)) * 100}%`,
-              height: "100%",
-              background: `linear-gradient(90deg, ${C.green}, ${C.accent})`,
-              borderRadius: 6,
-            }}
-          />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        {/* Draw info */}
+        <Card>
+          <SectionLabel>Draw Status</SectionLabel>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <Badge label={draw.label} color={draw.color} bg={draw.bg} />
+              <Badge label={`${choice.label} Choice`} color={choice.color} />
+            </div>
+            <p style={{ fontSize: 13, color: C.text, lineHeight: 1.6, margin: 0 }}>
+              <span style={{ fontFamily: "'IBM Plex Mono', monospace", color: C.accent }}>{unit.huntCode}</span>
+              {" · "}{unit.appLabel}
+            </p>
+            <p style={{ fontSize: 13, color: C.textSub, lineHeight: 1.6, margin: 0 }}>
+              {unit.draw === "moderate"     && "First-year odds are viable. Limited archery — check CPW brochure for special restrictions."}
+              {unit.draw === "low-moderate" && "Typically 2–3 preference points for early seasons. OTC available for archery and select rifle seasons."}
+              {unit.draw === "high"         && "Competitive draw with limited non-resident allocation. Challenging odds without banked preference points."}
+            </p>
+            <p style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.6, margin: 0 }}>
+              <strong style={{ color: C.text }}>Antler rule:</strong> {unit.antler}
+            </p>
+          </div>
+        </Card>
+
+        {/* Highlights */}
+        <Card>
+          <SectionLabel>Key Highlights</SectionLabel>
+          <BulletList items={unit.highlights} icon={Target} iconColor={C.accent} />
+        </Card>
+      </div>
+
+      {/* GoHunt Quick Tips */}
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+          <SectionLabel>Quick Tips · GoHunt</SectionLabel>
+          <GoHuntBadge slug={unit.gohuntSlug} />
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-          <span style={{ fontSize: 11, color: C.textMuted, fontFamily: "'IBM Plex Mono', monospace" }}>
-            Low: {unit.elevation[0].toLocaleString()} ft
-          </span>
-          <span style={{ fontSize: 11, color: C.textMuted, fontFamily: "'IBM Plex Mono', monospace" }}>
-            High: {unit.elevation[1].toLocaleString()} ft
-          </span>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          {unit.quickTips.map((tip, i) => (
+            <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", background: C.surface, borderRadius: 6, padding: "10px 12px", border: `1px solid ${C.border}` }}>
+              <Lightbulb size={13} style={{ color: C.amber, flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
+              <span style={{ fontSize: 13, color: C.text, lineHeight: 1.5 }}>{tip}</span>
+            </div>
+          ))}
         </div>
       </Card>
     </div>
@@ -645,12 +711,63 @@ function OverviewPanel({ unit }) {
 }
 
 function TerrainPanel({ unit }) {
+  const { lat, lng, zoom } = unit.coords;
+  // OpenStreetMap topo layer embed
+  const osmTopoUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.8}%2C${lat - 0.5}%2C${lng + 0.8}%2C${lat + 0.5}&layer=cyclemap&marker=${lat}%2C${lng}`;
+  const topoLinkUrl = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=${zoom}/${lat}/${lng}&layers=C`;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <Card>
-        <SectionLabel>Terrain Summary</SectionLabel>
-        <p style={{ fontSize: 14, color: C.text, lineHeight: 1.7, margin: 0 }}>{unit.terrain.summary}</p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+          <SectionLabel>Terrain Narrative · GoHunt</SectionLabel>
+          <GoHuntBadge slug={unit.gohuntSlug} />
+        </div>
+        <p style={{ fontSize: 14, color: C.text, lineHeight: 1.75, margin: 0, fontFamily: "'Source Serif 4', Georgia, serif" }}>{unit.terrain.summary}</p>
       </Card>
+
+      {/* Topographic Map */}
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+          <div>
+            <SectionLabel>Topographic Map</SectionLabel>
+            <p style={{ fontSize: 12, color: C.textMuted, margin: 0 }}>
+              Terrain visualization · {unit.elevation[0].toLocaleString()}–{unit.elevation[1].toLocaleString()} ft
+            </p>
+          </div>
+          <a href={topoLinkUrl} target="_blank" rel="noopener noreferrer"
+            aria-label={`Open ${unit.displayName} topo map in new tab`}
+            style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 9px", borderRadius: 4, background: `${C.green}18`, border: `1px solid ${C.green}44`, color: C.green, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", textDecoration: "none" }}>
+            <ExternalLink size={11} aria-hidden="true" />
+            Full Topo Map
+          </a>
+        </div>
+
+        {/* Map iframe */}
+        <div style={{ position: "relative", borderRadius: 8, overflow: "hidden", border: `1px solid ${C.border}` }}>
+          <iframe
+            title={`Topographic map of ${unit.displayName} terrain`}
+            src={osmTopoUrl}
+            width="100%"
+            height="360"
+            style={{ display: "block", border: "none" }}
+            loading="lazy"
+            sandbox="allow-scripts allow-same-origin"
+          />
+          {/* Elevation overlay */}
+          <div style={{ position: "absolute", top: 10, left: 10, background: `${C.bg}ee`, border: `1px solid ${C.border}`, borderRadius: 6, padding: "6px 10px" }}>
+            <span style={{ fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", color: C.accent, fontWeight: 500 }}>
+              ▲ {unit.elevation[0].toLocaleString()}–{unit.elevation[1].toLocaleString()} ft
+            </span>
+          </div>
+        </div>
+
+        {/* Map attribution */}
+        <p style={{ fontSize: 10, color: C.textMuted, margin: "8px 0 0", fontFamily: "'IBM Plex Mono', monospace" }}>
+          Topo data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" style={{ color: C.textMuted }}>OpenStreetMap</a> contributors
+        </p>
+      </Card>
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <Card>
           <SectionLabel>Vegetation Zones</SectionLabel>
@@ -662,10 +779,10 @@ function TerrainPanel({ unit }) {
         </Card>
       </div>
       <Card>
-        <SectionLabel>Slope & Difficulty</SectionLabel>
+        <SectionLabel>Slope & Difficulty Note</SectionLabel>
         <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
           <AlertTriangle size={16} style={{ color: C.amber, flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
-          <p style={{ fontSize: 14, color: C.text, lineHeight: 1.6, margin: 0 }}>{unit.terrain.slope}</p>
+          <p style={{ fontSize: 14, color: C.text, lineHeight: 1.65, margin: 0 }}>{unit.terrain.slope}</p>
         </div>
       </Card>
     </div>
@@ -676,8 +793,11 @@ function AccessPanel({ unit }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <Card>
-        <SectionLabel>Access Overview</SectionLabel>
-        <p style={{ fontSize: 14, color: C.text, lineHeight: 1.7, margin: 0 }}>{unit.access.summary}</p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+          <SectionLabel>Access Overview · GoHunt</SectionLabel>
+          <GoHuntBadge slug={unit.gohuntSlug} />
+        </div>
+        <p style={{ fontSize: 14, color: C.text, lineHeight: 1.75, margin: 0, fontFamily: "'Source Serif 4', Georgia, serif" }}>{unit.access.summary}</p>
       </Card>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <Card>
@@ -703,62 +823,34 @@ function DirectionsPanel({ unit }) {
       <Card>
         <SectionLabel>Fly-In Option</SectionLabel>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-            <span style={{ fontFamily: "'Oswald', sans-serif", fontSize: 20, color: C.accent, letterSpacing: "0.04em" }}>
-              {unit.directions.fly.airport}
-            </span>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <span style={{ fontFamily: "'Oswald', sans-serif", fontSize: 20, color: C.accent, letterSpacing: "0.04em" }}>{unit.directions.fly.airport}</span>
             <Badge label={`Drive: ${unit.directions.fly.driveTime}`} color={C.green} />
           </div>
-          <p style={{ fontSize: 14, color: C.text, lineHeight: 1.65, margin: 0 }}>
-            {unit.directions.fly.route}
-          </p>
+          <p style={{ fontSize: 14, color: C.text, lineHeight: 1.65, margin: 0 }}>{unit.directions.fly.route}</p>
           {unit.directions.fly.note && (
-            <p style={{ fontSize: 13, color: C.accent, lineHeight: 1.5, margin: 0, fontStyle: "italic" }}>
-              ★ {unit.directions.fly.note}
-            </p>
+            <p style={{ fontSize: 13, color: C.accent, lineHeight: 1.5, margin: 0, fontStyle: "italic" }}>★ {unit.directions.fly.note}</p>
           )}
         </div>
       </Card>
-
       <Card>
         <SectionLabel>Drive from North Carolina</SectionLabel>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <Badge label={unit.directions.drive.distance} color={C.accent} />
             <Badge label={`~${unit.directions.drive.time}`} color={C.textSub} />
           </div>
-          <p style={{ fontSize: 14, color: C.text, lineHeight: 1.65, margin: 0 }}>
-            {unit.directions.drive.route}
-          </p>
+          <p style={{ fontSize: 14, color: C.text, lineHeight: 1.65, margin: 0 }}>{unit.directions.drive.route}</p>
         </div>
       </Card>
-
       <Card>
-        <SectionLabel>Comparison — All Three Units</SectionLabel>
+        <SectionLabel>All-Units Comparison</SectionLabel>
         <div style={{ overflowX: "auto" }}>
-          <table
-            style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}
-            aria-label="Drive distance comparison for all hunt units"
-          >
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }} aria-label="Drive distance comparison across all hunt units">
             <thead>
               <tr>
                 {["Unit", "Drive Distance", "Drive Time", "Nearest Airport"].map(h => (
-                  <th
-                    key={h}
-                    scope="col"
-                    style={{
-                      textAlign: "left",
-                      padding: "6px 12px",
-                      fontFamily: "'IBM Plex Mono', monospace",
-                      fontSize: 10,
-                      letterSpacing: "0.1em",
-                      textTransform: "uppercase",
-                      color: C.textMuted,
-                      borderBottom: `1px solid ${C.border}`,
-                    }}
-                  >
-                    {h}
-                  </th>
+                  <th key={h} scope="col" style={{ textAlign: "left", padding: "6px 12px", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: C.textMuted, borderBottom: `1px solid ${C.border}` }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -780,162 +872,589 @@ function DirectionsPanel({ unit }) {
 }
 
 function LodgingPanel({ unit }) {
-  const hubColors = { Primary: C.accent, Secondary: C.green, "Full Services": C.green, Overflow: C.textSub };
+  const hubColors = { Primary: C.accent, Secondary: C.green, "Full Services": C.green, Overflow: "#8888aa" };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 12 }}>
         {unit.lodging.hubs.map(hub => (
           <Card key={hub.name}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-              <span style={{ fontFamily: "'Oswald', sans-serif", fontSize: 16, color: C.text, letterSpacing: "0.03em" }}>
-                {hub.name}
-              </span>
+              <span style={{ fontFamily: "'Oswald', sans-serif", fontSize: 15, color: C.text }}>{hub.name}</span>
               <Badge label={hub.badge} color={hubColors[hub.badge] || C.textSub} />
             </div>
             <p style={{ fontSize: 13, color: C.textSub, lineHeight: 1.6, margin: "0 0 8px" }}>{hub.note}</p>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
               <Navigation size={12} style={{ color: C.textMuted }} aria-hidden="true" />
-              <span style={{ fontSize: 12, color: C.textMuted, fontFamily: "'IBM Plex Mono', monospace" }}>
-                {hub.dist} from hunting area
-              </span>
+              <span style={{ fontSize: 11, color: C.textMuted, fontFamily: "'IBM Plex Mono', monospace" }}>{hub.dist} from hunting area</span>
             </div>
           </Card>
         ))}
       </div>
       <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+          <SectionLabel>Campgrounds · GoHunt</SectionLabel>
+          <GoHuntBadge slug={unit.gohuntSlug} />
+        </div>
+        <BulletList items={unit.lodging.campgrounds} icon={TreePine} iconColor={C.green} />
+      </Card>
+      <Card>
         <SectionLabel>Lodging Options</SectionLabel>
-        <BulletList items={unit.lodging.options} icon={Home} iconColor={C.green} />
+        <BulletList items={unit.lodging.options} icon={Home} iconColor={C.accent} />
       </Card>
     </div>
   );
 }
 
+function MapPanel({ unit }) {
+  const { lat, lng, zoom } = unit.coords;
+  // OpenStreetMap embed — free, no API key
+  const osmUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 1.2}%2C${lat - 0.8}%2C${lng + 1.2}%2C${lat + 0.8}&layer=cyclemap&marker=${lat}%2C${lng}`;
+  const topoUrl = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=${zoom}/${lat}/${lng}&layers=C`;
+  const gohuntUrl = `${INTEGRATIONS.gohunt.profileBase}${unit.gohuntSlug}`;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
+          <div>
+            <SectionLabel>Unit Map — {unit.displayName}</SectionLabel>
+            <p style={{ fontSize: 12, color: C.textMuted, margin: 0 }}>
+              Topo layer via OpenStreetMap · Centered on {unit.nickname}
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <GoHuntBadge slug={unit.gohuntSlug} />
+            <a href={topoUrl} target="_blank" rel="noopener noreferrer"
+              aria-label={`Open ${unit.displayName} in OpenStreetMap (opens in new tab)`}
+              style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 9px", borderRadius: 4, background: `${C.green}18`, border: `1px solid ${C.green}44`, color: C.green, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", textDecoration: "none" }}>
+              <ExternalLink size={11} aria-hidden="true" />
+              Open Full Map
+            </a>
+          </div>
+        </div>
+
+        {/* Map iframe */}
+        <div style={{ position: "relative", borderRadius: 8, overflow: "hidden", border: `1px solid ${C.border}` }}>
+          <iframe
+            title={`Topographic map of ${unit.displayName} — ${unit.nickname}`}
+            src={osmUrl}
+            width="100%"
+            height="440"
+            style={{ display: "block", border: "none" }}
+            loading="lazy"
+            sandbox="allow-scripts allow-same-origin"
+          />
+          {/* Coords overlay */}
+          <div style={{ position: "absolute", bottom: 10, left: 10, background: `${C.bg}ee`, border: `1px solid ${C.border}`, borderRadius: 6, padding: "6px 10px", display: "flex", gap: 12 }}>
+            <span style={{ fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", color: C.textSub }}>
+              {lat.toFixed(3)}°N / {Math.abs(lng).toFixed(3)}°W
+            </span>
+          </div>
+        </div>
+
+        {/* Attribution */}
+        <p style={{ fontSize: 11, color: C.textMuted, margin: "8px 0 0", fontFamily: "'IBM Plex Mono', monospace" }}>
+          Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" style={{ color: C.textMuted }}>OpenStreetMap</a> contributors · Unit boundary data via{" "}
+          <a href={gohuntUrl} target="_blank" rel="noopener noreferrer" style={{ color: C.gohuntOrange }}>GoHunt</a>
+        </p>
+      </Card>
+
+      {/* Quick links */}
+      <Card>
+        <SectionLabel>External Map Resources</SectionLabel>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          {[
+            { label: "GoHunt Unit Profile",   href: gohuntUrl, color: C.gohuntOrange },
+            { label: "CPW Unit Info",          href: `https://cpw.state.co.us/hunting/big-game/elk`, color: C.green },
+            { label: "CalTopo Topo Map",       href: `https://caltopo.com/map.html#ll=${lat},${lng}&z=${zoom}&b=mbt`, color: C.accent },
+            { label: "OnX Hunt Layers",        href: `https://www.onxmaps.com/hunt`, color: C.accent },
+          ].map(({ label, href, color }) => (
+            <a key={label} href={href} target="_blank" rel="noopener noreferrer"
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 6, background: `${color}18`, border: `1px solid ${color}44`, color, fontSize: 13, fontFamily: "'Oswald', sans-serif", letterSpacing: "0.05em", textDecoration: "none" }}
+              aria-label={`${label} (opens in new tab)`}>
+              <ExternalLink size={13} aria-hidden="true" />{label}
+            </a>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function WaypointsPanel({ unit }) {
+  const [waypoints, setWaypoints] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState(null);
+  const [selectedLayer, setSelectedLayer] = useState("tracestrack");
+  const [formData, setFormData] = useState({
+    name: "",
+    lat: unit.coords.lat.toFixed(4),
+    lng: unit.coords.lng.toFixed(4),
+    category: "other",
+    notes: "",
+  });
+
+  const storageKey = `elk-waypoints-${unit.id}`;
+  const currentLayer = MAP_LAYERS[selectedLayer];
+
+  // Load waypoints from storage
+  useEffect(() => {
+    setLoading(true);
+    window.storage?.get(storageKey)
+      .then(r => { setWaypoints(r?.value || []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [unit.id, storageKey]);
+
+  // Save waypoints to storage
+  const saveWaypoints = async (newWaypoints) => {
+    setWaypoints(newWaypoints);
+    await window.storage?.set(storageKey, newWaypoints).catch(() => {});
+  };
+
+  const handleAddWaypoint = () => {
+    if (!formData.name.trim() || !formData.lat || !formData.lng) return;
+
+    const newWaypoint = {
+      id: Date.now().toString(),
+      ...formData,
+      lat: parseFloat(formData.lat),
+      lng: parseFloat(formData.lng),
+    };
+
+    if (editingId) {
+      // Update existing waypoint
+      saveWaypoints(waypoints.map(wp => wp.id === editingId ? newWaypoint : wp));
+      setEditingId(null);
+    } else {
+      // Add new waypoint
+      saveWaypoints([...waypoints, newWaypoint]);
+    }
+
+    // Reset form
+    setFormData({
+      name: "",
+      lat: unit.coords.lat.toFixed(4),
+      lng: unit.coords.lng.toFixed(4),
+      category: "other",
+      notes: "",
+    });
+  };
+
+  const handleEdit = (waypoint) => {
+    setFormData({
+      name: waypoint.name,
+      lat: waypoint.lat.toFixed(4),
+      lng: waypoint.lng.toFixed(4),
+      category: waypoint.category,
+      notes: waypoint.notes || "",
+    });
+    setEditingId(waypoint.id);
+  };
+
+  const handleDelete = (id) => {
+    if (confirm("Delete this waypoint?")) {
+      saveWaypoints(waypoints.filter(wp => wp.id !== id));
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setFormData({
+      name: "",
+      lat: unit.coords.lat.toFixed(4),
+      lng: unit.coords.lng.toFixed(4),
+      category: "other",
+      notes: "",
+    });
+  };
+
+  const addSampleWaypoints = () => {
+    const samples = {
+      "GMU-12": [
+        { name: "Vaughn Lake Camp", lat: 40.12, lng: -107.48, category: "camp", notes: "USFS campground, open June-Oct" },
+        { name: "Morapos Creek", lat: 40.18, lng: -107.52, category: "water", notes: "Reliable water source" },
+        { name: "Ridge Glassing Point", lat: 40.20, lng: -107.45, category: "glassing", notes: "Good morning glassing spot, overlooks valley" },
+        { name: "Trailhead Parking", lat: 40.14, lng: -107.50, category: "parking", notes: "Main trailhead access" },
+      ],
+      "GMU-62": [
+        { name: "Divide Road Camp", lat: 38.65, lng: -108.20, category: "camp", notes: "Dispersed camping along USFS Rd 402" },
+        { name: "Potter Canyon Spring", lat: 38.60, lng: -108.15, category: "water", notes: "Spring in canyon bottom" },
+        { name: "Plateau Overlook", lat: 38.70, lng: -108.25, category: "glassing", notes: "Glassing into canyons from plateau edge" },
+        { name: "Mesa Access", lat: 38.62, lng: -108.18, category: "trail", notes: "Trail down into canyon" },
+      ],
+      "GMU-79": [
+        { name: "USFS Road 600 Camp", lat: 37.80, lng: -106.50, category: "camp", notes: "High elevation dispersed camping" },
+        { name: "La Garita Creek", lat: 37.85, lng: -106.48, category: "water", notes: "Creek crossing on trail" },
+        { name: "Ridge Top View", lat: 37.82, lng: -106.52, category: "glassing", notes: "Panoramic glassing point" },
+        { name: "Wilderness Boundary", lat: 37.78, lng: -106.46, category: "danger", notes: "La Garita Wilderness - foot/horse only beyond this point" },
+      ],
+    };
+
+    const unitSamples = samples[unit.id] || [];
+    const newWaypoints = [...waypoints];
+
+    unitSamples.forEach(sample => {
+      newWaypoints.push({
+        id: Date.now().toString() + Math.random(),
+        ...sample,
+      });
+    });
+
+    saveWaypoints(newWaypoints);
+  };
+
+  // Custom marker icon creator
+  const createCustomIcon = (category) => {
+    const cat = WAYPOINT_CATEGORIES[category] || WAYPOINT_CATEGORIES.other;
+    return L.divIcon({
+      html: `<div style="background: ${cat.color}; width: 28px; height: 28px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;"><span style="transform: rotate(45deg); font-size: 14px;">${cat.icon}</span></div>`,
+      className: "custom-marker",
+      iconSize: [28, 28],
+      iconAnchor: [14, 28],
+      popupAnchor: [0, -28],
+    });
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <Card>
+        <div style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 12 }}>
+          <Info size={16} style={{ color: C.accent, flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
+          <p style={{ fontSize: 14, color: C.textSub, lineHeight: 1.65, margin: 0 }}>
+            Mark important locations for your hunt: camps, water sources, glassing spots, trail access, parking areas, and more. Waypoints are saved per unit and persist across sessions.
+          </p>
+        </div>
+        {waypoints.length === 0 && (
+          <div style={{ display: "flex", justifyContent: "center", paddingTop: 8, borderTop: `1px solid ${C.border}` }}>
+            <button
+              onClick={addSampleWaypoints}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: C.surface, color: C.accent, border: `1px solid ${C.accent}44`, borderRadius: 6, fontFamily: "'Oswald', sans-serif", fontSize: 13, cursor: "pointer", letterSpacing: "0.05em" }}
+            >
+              <Lightbulb size={14} />Add Sample Waypoints to See Markers
+            </button>
+          </div>
+        )}
+      </Card>
+
+      {/* Interactive Map */}
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
+          <SectionLabel>Hunt Area Map — {waypoints.length} Waypoint{waypoints.length !== 1 ? 's' : ''}</SectionLabel>
+
+          {/* Layer Selector */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <label style={{ fontSize: 11, color: C.textMuted, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Map Layer:
+            </label>
+            <select
+              value={selectedLayer}
+              onChange={e => setSelectedLayer(e.target.value)}
+              style={{ padding: "5px 10px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 6, color: C.text, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", cursor: "pointer" }}
+            >
+              {Object.values(MAP_LAYERS).map(layer => (
+                <option key={layer.id} value={layer.id}>{layer.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Layer Description */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: C.surface, borderRadius: 6, marginBottom: 12, border: `1px solid ${C.border}` }}>
+          <Info size={13} style={{ color: C.accent, flexShrink: 0 }} />
+          <span style={{ fontSize: 12, color: C.textSub }}>{currentLayer.description}</span>
+        </div>
+
+        <div style={{ borderRadius: 8, overflow: "hidden", border: `1px solid ${C.border}`, height: 450 }}>
+          <MapContainer
+            center={[unit.coords.lat, unit.coords.lng]}
+            zoom={unit.coords.zoom}
+            style={{ height: "100%", width: "100%" }}
+            scrollWheelZoom={true}
+            key={selectedLayer}
+          >
+            <TileLayer
+              attribution={currentLayer.attribution}
+              url={currentLayer.url}
+              maxZoom={currentLayer.maxZoom}
+            />
+            {waypoints.map(wp => {
+              const cat = WAYPOINT_CATEGORIES[wp.category] || WAYPOINT_CATEGORIES.other;
+              return (
+                <Marker
+                  key={wp.id}
+                  position={[wp.lat, wp.lng]}
+                  icon={createCustomIcon(wp.category)}
+                >
+                  <Popup>
+                    <div style={{ minWidth: 180 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                        <span style={{ fontSize: 16 }}>{cat.icon}</span>
+                        <strong style={{ fontSize: 14 }}>{wp.name}</strong>
+                      </div>
+                      <div style={{ fontSize: 11, color: "#666", marginBottom: 4 }}>
+                        {wp.lat.toFixed(5)}, {wp.lng.toFixed(5)}
+                      </div>
+                      <div style={{ fontSize: 11, color: cat.color, marginBottom: 6 }}>
+                        {cat.label}
+                      </div>
+                      {wp.notes && (
+                        <div style={{ fontSize: 12, marginBottom: 8, paddingTop: 6, borderTop: "1px solid #ddd" }}>
+                          {wp.notes}
+                        </div>
+                      )}
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button
+                          onClick={() => handleEdit(wp)}
+                          style={{ flex: 1, padding: "4px 8px", background: "#4a9a5a", color: "white", border: "none", borderRadius: 4, fontSize: 11, cursor: "pointer" }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(wp.id)}
+                          style={{ flex: 1, padding: "4px 8px", background: "#c04a38", color: "white", border: "none", borderRadius: 4, fontSize: 11, cursor: "pointer" }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })}
+          </MapContainer>
+        </div>
+        <p style={{ fontSize: 10, color: C.textMuted, margin: "8px 0 0", fontFamily: "'IBM Plex Mono', monospace" }}>
+          {currentLayer.name} · Click markers for details · Scroll to zoom · Drag to pan
+        </p>
+      </Card>
+
+      {/* Add/Edit Waypoint Form */}
+      <Card>
+        <SectionLabel>{editingId ? "Edit Waypoint" : "Add New Waypoint"}</SectionLabel>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div>
+            <label style={{ display: "block", fontSize: 11, color: C.textMuted, marginBottom: 4, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Name *
+            </label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={e => setFormData({ ...formData, name: e.target.value })}
+              placeholder="e.g., Base Camp, Elk Creek"
+              style={{ width: "100%", padding: "8px 10px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 6, color: C.text, fontSize: 13, fontFamily: "'Source Serif 4', Georgia, serif" }}
+            />
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 11, color: C.textMuted, marginBottom: 4, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Category *
+            </label>
+            <select
+              value={formData.category}
+              onChange={e => setFormData({ ...formData, category: e.target.value })}
+              style={{ width: "100%", padding: "8px 10px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 6, color: C.text, fontSize: 13 }}
+            >
+              {Object.entries(WAYPOINT_CATEGORIES).map(([key, cat]) => (
+                <option key={key} value={key}>{cat.icon} {cat.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 11, color: C.textMuted, marginBottom: 4, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Latitude *
+            </label>
+            <input
+              type="number"
+              step="0.0001"
+              value={formData.lat}
+              onChange={e => setFormData({ ...formData, lat: e.target.value })}
+              placeholder="e.g., 40.1234"
+              style={{ width: "100%", padding: "8px 10px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 6, color: C.text, fontSize: 13, fontFamily: "'IBM Plex Mono', monospace" }}
+            />
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 11, color: C.textMuted, marginBottom: 4, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Longitude *
+            </label>
+            <input
+              type="number"
+              step="0.0001"
+              value={formData.lng}
+              onChange={e => setFormData({ ...formData, lng: e.target.value })}
+              placeholder="e.g., -107.5678"
+              style={{ width: "100%", padding: "8px 10px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 6, color: C.text, fontSize: 13, fontFamily: "'IBM Plex Mono', monospace" }}
+            />
+          </div>
+        </div>
+        <div style={{ marginTop: 12 }}>
+          <label style={{ display: "block", fontSize: 11, color: C.textMuted, marginBottom: 4, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            Notes (Optional)
+          </label>
+          <textarea
+            value={formData.notes}
+            onChange={e => setFormData({ ...formData, notes: e.target.value })}
+            placeholder="Description, directions, observations..."
+            rows={2}
+            style={{ width: "100%", padding: "8px 10px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 6, color: C.text, fontSize: 13, fontFamily: "'Source Serif 4', Georgia, serif", resize: "vertical" }}
+          />
+        </div>
+        <div style={{ display: "flex", gap: 8, marginTop: 12, justifyContent: "flex-end" }}>
+          {editingId && (
+            <button
+              onClick={handleCancelEdit}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: C.surface, color: C.text, border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: "'Oswald', sans-serif", fontSize: 13, cursor: "pointer" }}
+            >
+              <X size={14} />Cancel
+            </button>
+          )}
+          <button
+            onClick={handleAddWaypoint}
+            disabled={!formData.name.trim() || !formData.lat || !formData.lng}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: editingId ? C.green : C.accent, color: C.bg, border: "none", borderRadius: 6, fontFamily: "'Oswald', sans-serif", fontSize: 13, cursor: formData.name.trim() ? "pointer" : "not-allowed", opacity: formData.name.trim() ? 1 : 0.5 }}
+          >
+            {editingId ? <><Save size={14} />Update</> : <><Plus size={14} />Add Waypoint</>}
+          </button>
+        </div>
+      </Card>
+
+      {/* Waypoints List */}
+      {waypoints.length > 0 && (
+        <Card>
+          <SectionLabel>All Waypoints ({waypoints.length})</SectionLabel>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {waypoints.map(wp => {
+              const cat = WAYPOINT_CATEGORIES[wp.category] || WAYPOINT_CATEGORIES.other;
+              return (
+                <div
+                  key={wp.id}
+                  style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "12px 14px", background: C.surface, borderRadius: 6, border: `1px solid ${C.border}` }}
+                >
+                  <span style={{ fontSize: 20, flexShrink: 0 }}>{cat.icon}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <strong style={{ fontSize: 14, color: C.text }}>{wp.name}</strong>
+                      <Badge label={cat.label} color={cat.color} />
+                    </div>
+                    <div style={{ fontSize: 11, color: C.textMuted, fontFamily: "'IBM Plex Mono', monospace", marginBottom: 4 }}>
+                      {wp.lat.toFixed(5)}°N, {Math.abs(wp.lng).toFixed(5)}°W
+                    </div>
+                    {wp.notes && (
+                      <p style={{ fontSize: 12, color: C.textSub, margin: "4px 0 0", lineHeight: 1.5 }}>{wp.notes}</p>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                    <button
+                      onClick={() => handleEdit(wp)}
+                      aria-label="Edit waypoint"
+                      style={{ padding: "6px 10px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 6, color: C.green, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(wp.id)}
+                      aria-label="Delete waypoint"
+                      style={{ padding: "6px 10px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 6, color: C.red, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
+      {waypoints.length === 0 && !loading && (
+        <Card>
+          <div style={{ textAlign: "center", padding: "32px 20px" }}>
+            <MapPin size={40} style={{ color: C.textMuted, margin: "0 auto 12px" }} />
+            <p style={{ fontSize: 14, color: C.textMuted, margin: 0 }}>
+              No waypoints yet. Add your first waypoint using the form above.
+            </p>
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
 function IntegrationsPanel() {
+  const statusConfig = {
+    partial: { label: "Partial — Public Data",    color: C.amber },
+    planned: { label: "Planned",                  color: C.textMuted },
+    active:  { label: "Active",                   color: C.green },
+  };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <Card>
         <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
           <Info size={16} style={{ color: C.accent, flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
           <p style={{ fontSize: 14, color: C.textSub, lineHeight: 1.65, margin: 0 }}>
-            Third-party integrations are planned for future versions. When connected, these services will
-            surface real-time draw odds, weather forecasts, scouting layers, and harvest data directly
-            alongside your unit notes. The adapter architecture is already in place — connection activation
-            is the only remaining step.
+            GoHunt public unit data (At a Glance stats, terrain narratives, quick tips, campground listings) is already integrated throughout this app. Full Insider features — draw odds, harvest stats, weather overlays — require a GoHunt API key. HuntWise integration is planned for a future version.
           </p>
         </div>
       </Card>
 
-      {Object.values(INTEGRATIONS).map(integration => (
-        <Card key={integration.id} style={{ position: "relative" }}>
-          <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-            {/* Logo */}
-            <div
-              style={{
-                width: 44, height: 44, borderRadius: 8,
-                background: C.surface, border: `1px solid ${C.border}`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontFamily: "'Oswald', sans-serif", fontSize: 20, color: C.textMuted,
-                flexShrink: 0,
-              }}
-              aria-hidden="true"
-            >
-              {integration.logoInitial}
-            </div>
-
-            {/* Info */}
-            <div style={{ flex: 1 }}>
-              <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 6, flexWrap: "wrap" }}>
-                <span style={{ fontFamily: "'Oswald', sans-serif", fontSize: 18, color: C.text, letterSpacing: "0.04em" }}>
-                  {integration.name}
-                </span>
-                <Badge label="Planned" color={C.amber} />
+      {Object.values(INTEGRATIONS).map(integration => {
+        const st = statusConfig[integration.status];
+        return (
+          <Card key={integration.id}>
+            <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+              <div style={{ width: 44, height: 44, borderRadius: 8, background: C.surface, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Oswald', sans-serif", fontSize: 20, color: integration.status === "partial" ? C.gohuntOrange : C.textMuted, flexShrink: 0 }} aria-hidden="true">
+                {integration.logoInitial}
               </div>
-              <p style={{ fontSize: 13, color: C.textSub, lineHeight: 1.6, margin: "0 0 12px" }}>
-                {integration.tagline}
-              </p>
-
-              {/* Data types */}
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
-                {integration.dataTypes.map(dt => (
-                  <span
-                    key={dt}
-                    style={{
-                      padding: "3px 8px", borderRadius: 4,
-                      background: C.surface, border: `1px solid ${C.border}`,
-                      fontSize: 11, color: C.textMuted,
-                      fontFamily: "'IBM Plex Mono', monospace",
-                    }}
-                  >
-                    {dt}
-                  </span>
-                ))}
-              </div>
-
-              {/* Actions */}
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <button
-                  disabled
-                  aria-disabled="true"
-                  style={{
-                    padding: "7px 16px",
-                    background: C.accentDim,
-                    color: `${C.text}66`,
-                    border: "none",
-                    borderRadius: 6,
-                    fontFamily: "'Oswald', sans-serif",
-                    fontSize: 13,
-                    letterSpacing: "0.06em",
-                    cursor: "not-allowed",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  <Zap size={13} aria-hidden="true" />
-                  Connect (Coming Soon)
-                </button>
-                <a
-                  href={integration.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: "flex", alignItems: "center", gap: 5,
-                    fontSize: 13, color: C.accent, textDecoration: "none",
-                  }}
-                  aria-label={`Visit ${integration.name} website (opens in new tab)`}
-                >
-                  <ExternalLink size={13} aria-hidden="true" />
-                  Visit {integration.name}
-                </a>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 6, flexWrap: "wrap" }}>
+                  <span style={{ fontFamily: "'Oswald', sans-serif", fontSize: 18, color: C.text, letterSpacing: "0.04em" }}>{integration.name}</span>
+                  <Badge label={st.label} color={st.color} />
+                </div>
+                <p style={{ fontSize: 13, color: C.textSub, lineHeight: 1.6, margin: "0 0 12px" }}>{integration.tagline}</p>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
+                  {integration.dataTypes.map(dt => (
+                    <span key={dt} style={{ padding: "3px 8px", borderRadius: 4, background: C.surface, border: `1px solid ${C.border}`, fontSize: 11, color: C.textMuted, fontFamily: "'IBM Plex Mono', monospace" }}>{dt}</span>
+                  ))}
+                </div>
+                <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                  {integration.status === "partial"
+                    ? <Badge label="Public data active · Insider API pending" color={C.amber} />
+                    : (
+                      <button disabled aria-disabled="true" style={{ padding: "7px 16px", background: C.accentDim, color: `${C.text}66`, border: "none", borderRadius: 6, fontFamily: "'Oswald', sans-serif", fontSize: 13, letterSpacing: "0.06em", cursor: "not-allowed", display: "flex", alignItems: "center", gap: 6 }}>
+                        <Zap size={13} aria-hidden="true" />Connect (Coming Soon)
+                      </button>
+                    )
+                  }
+                  <a href={integration.website} target="_blank" rel="noopener noreferrer"
+                    aria-label={`Visit ${integration.name} website (opens in new tab)`}
+                    style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, color: integration.status === "partial" ? C.gohuntOrange : C.accent, textDecoration: "none" }}>
+                    <ExternalLink size={13} aria-hidden="true" />Visit {integration.name}
+                  </a>
+                </div>
               </div>
             </div>
-          </div>
-        </Card>
-      ))}
+          </Card>
+        );
+      })}
     </div>
   );
 }
 
-// ── NOTES COMPONENT ───────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// PERSISTENT NOTES
+// ═══════════════════════════════════════════════════════════════
 function NotesSection({ unitId }) {
   const [note, setNote] = useState("");
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
-  const storageKey = `elk-note-${unitId}`;
+  const key = `elk-note-${unitId}`;
 
   useEffect(() => {
-    setLoading(true);
-    setSaved(false);
-    window.storage?.get(storageKey).then(r => {
-      setNote(r?.value ?? "");
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, [unitId, storageKey]);
+    setLoading(true); setSaved(false);
+    window.storage?.get(key).then(r => { setNote(r?.value ?? ""); setLoading(false); }).catch(() => setLoading(false));
+  }, [unitId, key]);
 
-  const handleSave = async () => {
-    await window.storage?.set(storageKey, note).catch(() => {});
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const save = async () => {
+    await window.storage?.set(key, note).catch(() => {});
+    setSaved(true); setTimeout(() => setSaved(false), 2000);
   };
 
   return (
@@ -946,44 +1465,16 @@ function NotesSection({ unitId }) {
         value={loading ? "Loading…" : note}
         onChange={e => { setNote(e.target.value); setSaved(false); }}
         disabled={loading}
-        placeholder="Add scouting notes, access observations, camp locations…"
+        placeholder="Scouting observations, camp locations, access notes, waypoints…"
         rows={4}
-        style={{
-          width: "100%",
-          background: C.surface,
-          border: `1px solid ${C.border}`,
-          borderRadius: 6,
-          color: C.text,
-          fontFamily: "'Source Serif 4', Georgia, serif",
-          fontSize: 14,
-          lineHeight: 1.7,
-          padding: "10px 12px",
-          resize: "vertical",
-          outline: "none",
-          boxSizing: "border-box",
-        }}
+        style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 6, color: C.text, fontFamily: "'Source Serif 4', Georgia, serif", fontSize: 14, lineHeight: 1.7, padding: "10px 12px", resize: "vertical", outline: "none", boxSizing: "border-box" }}
         onFocus={e => { e.target.style.borderColor = C.accent; }}
         onBlur={e => { e.target.style.borderColor = C.border; }}
       />
       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
-        <button
-          onClick={handleSave}
-          disabled={loading}
-          style={{
-            display: "flex", alignItems: "center", gap: 6,
-            padding: "6px 14px",
-            background: saved ? C.green : C.accent,
-            color: C.bg,
-            border: "none",
-            borderRadius: 6,
-            fontFamily: "'Oswald', sans-serif",
-            fontSize: 13,
-            letterSpacing: "0.06em",
-            cursor: loading ? "not-allowed" : "pointer",
-            transition: "background 0.2s",
-          }}
-          aria-label={saved ? "Notes saved" : "Save notes"}
-        >
+        <button onClick={save} disabled={loading}
+          style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", background: saved ? C.green : C.accent, color: C.bg, border: "none", borderRadius: 6, fontFamily: "'Oswald', sans-serif", fontSize: 13, letterSpacing: "0.06em", cursor: loading ? "not-allowed" : "pointer", transition: "background 0.2s" }}
+          aria-label={saved ? "Notes saved" : "Save notes"}>
           {saved ? <Check size={13} aria-hidden="true" /> : <Pencil size={13} aria-hidden="true" />}
           {saved ? "Saved" : "Save Notes"}
         </button>
@@ -996,157 +1487,76 @@ function NotesSection({ unitId }) {
 // MAIN APP
 // ═══════════════════════════════════════════════════════════════
 export default function ElkHuntDashboard() {
-  const [activeUnitId, setActiveUnitId] = useState(UNITS[2].id); // GMU-12 default
+  const [activeUnitId, setActiveUnitId] = useState(UNITS[2].id);
   const [activeTab, setActiveTab]       = useState("overview");
   const mainRef = useRef(null);
 
   useEffect(() => {
-    // Inject Google Fonts
     if (!document.getElementById("elk-gf")) {
-      const link = document.createElement("link");
-      link.id   = "elk-gf";
-      link.rel  = "stylesheet";
-      link.href = FONT_URL;
-      document.head.appendChild(link);
+      const l = document.createElement("link");
+      l.id = "elk-gf"; l.rel = "stylesheet"; l.href = FONT_URL;
+      document.head.appendChild(l);
     }
   }, []);
 
   const unit = UNITS.find(u => u.id === activeUnitId) ?? UNITS[0];
-
-  const switchUnit = (id) => {
-    setActiveUnitId(id);
-    setActiveTab("overview");
-    mainRef.current?.focus();
-  };
+  const switchUnit = id => { setActiveUnitId(id); setActiveTab("overview"); mainRef.current?.focus(); };
 
   return (
     <>
       <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :focus-visible { outline: 2px solid ${C.accent}; outline-offset: 2px; border-radius: 3px; }
-        .skip-link { position: absolute; top: -60px; left: 8px; background: ${C.accent}; color: ${C.bg};
-          padding: 8px 16px; border-radius: 6px; font-family: 'Oswald', sans-serif; font-size: 14px;
-          letter-spacing: 0.05em; z-index: 9999; text-decoration: none; transition: top 0.1s; }
+        .skip-link { position: absolute; top: -60px; left: 8px; background: ${C.accent}; color: ${C.bg}; padding: 8px 16px; border-radius: 6px; font-family: 'Oswald',sans-serif; font-size: 14px; letter-spacing: 0.05em; z-index: 9999; text-decoration: none; transition: top 0.1s; }
         .skip-link:focus { top: 8px; }
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: ${C.surface}; }
         ::-webkit-scrollbar-thumb { background: ${C.border}; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: ${C.borderLight}; }
         .unit-btn:hover { background: ${C.cardHover} !important; }
-        .unit-btn:hover .unit-arrow { opacity: 1 !important; }
+        [role="tab"]:hover { color: ${C.text} !important; }
+        a:focus-visible { outline: 2px solid ${C.accent}; outline-offset: 2px; border-radius: 3px; }
+        .custom-marker { background: transparent !important; border: none !important; }
+        .leaflet-popup-content-wrapper { background: ${C.card}; color: ${C.text}; border: 1px solid ${C.border}; }
+        .leaflet-popup-tip { background: ${C.card}; border: 1px solid ${C.border}; }
       `}</style>
 
-      {/* Skip to content */}
       <a href="#elk-main" className="skip-link">Skip to content</a>
 
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          height: "100vh",
-          background: C.bg,
-          color: C.text,
-          fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
-          overflow: "hidden",
-        }}
-      >
-        {/* ── HEADER ─────────────────────────────────────────── */}
-        <header
-          style={{
-            background: C.surface,
-            borderBottom: `1px solid ${C.border}`,
-            padding: "0 24px",
-            height: 56,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexShrink: 0,
-          }}
-        >
+      <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: C.bg, color: C.text, fontFamily: "system-ui, -apple-system, sans-serif", overflow: "hidden" }}>
+
+        {/* HEADER */}
+        <header style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, padding: "0 24px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Mountain size={20} style={{ color: C.accent }} aria-hidden="true" />
-            <h1
-              style={{
-                fontFamily: "'Oswald', sans-serif",
-                fontSize: 18,
-                fontWeight: 600,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: C.text,
-              }}
-            >
+            <h1 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 18, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: C.text }}>
               Elk Hunt Planner
             </h1>
-            <span
-              style={{
-                fontFamily: "'IBM Plex Mono', monospace",
-                fontSize: 10,
-                color: C.textMuted,
-                letterSpacing: "0.08em",
-                marginLeft: 4,
-              }}
-              aria-label="Colorado, Season 2026"
-            >
+            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: C.textMuted, letterSpacing: "0.08em" }} aria-label="Colorado, 2026 season">
               CO · 2026
             </span>
           </div>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            {Object.values(INTEGRATIONS).map(i => (
-              <span
-                key={i.id}
-                title={`${i.name}: ${i.status}`}
-                style={{
-                  display: "flex", alignItems: "center", gap: 4,
-                  fontSize: 11, color: C.textMuted,
-                  fontFamily: "'IBM Plex Mono', monospace",
-                }}
-                aria-label={`${i.name} integration: ${i.status}`}
-              >
-                <Plug size={11} aria-hidden="true" />
-                {i.name}
-              </span>
-            ))}
+          {/* GoHunt data source credit */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 11, color: C.textMuted, fontFamily: "'IBM Plex Mono', monospace" }}>Data:</span>
+            <a href="https://www.gohunt.com" target="_blank" rel="noopener noreferrer"
+              aria-label="GoHunt – data source (opens in new tab)"
+              style={{ display: "flex", alignItems: "center", gap: 4, textDecoration: "none", color: C.gohuntOrange, fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, letterSpacing: "0.04em" }}>
+              GoHunt <ExternalLink size={11} aria-hidden="true" />
+            </a>
           </div>
         </header>
 
-        {/* ── BODY ───────────────────────────────────────────── */}
+        {/* BODY */}
         <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
 
-          {/* ── SIDEBAR ──────────────────────────────────────── */}
-          <nav
-            aria-label="Colorado hunt units"
-            style={{
-              width: 220,
-              background: C.surface,
-              borderRight: `1px solid ${C.border}`,
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-              flexShrink: 0,
-            }}
-          >
+          {/* SIDEBAR */}
+          <nav aria-label="Colorado hunt units" style={{ width: 220, background: C.surface, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0 }}>
             <div style={{ padding: "14px 16px 10px", borderBottom: `1px solid ${C.border}` }}>
-              <p
-                style={{
-                  fontFamily: "'IBM Plex Mono', monospace",
-                  fontSize: 9,
-                  letterSpacing: "0.18em",
-                  textTransform: "uppercase",
-                  color: C.textMuted,
-                }}
-              >
+              <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: C.textMuted }}>
                 Applied Units · 2026
               </p>
             </div>
-            <ul
-              role="list"
-              style={{
-                listStyle: "none",
-                padding: "8px 0",
-                overflowY: "auto",
-                flex: 1,
-              }}
-            >
+            <ul role="list" style={{ listStyle: "none", padding: "8px 0", overflowY: "auto", flex: 1 }}>
               {UNITS.map(u => {
                 const active = u.id === activeUnitId;
                 const draw = DRAW_CONFIG[u.draw];
@@ -1158,91 +1568,27 @@ export default function ElkHuntDashboard() {
                       onClick={() => switchUnit(u.id)}
                       aria-current={active ? "true" : undefined}
                       aria-label={`${u.displayName} ${u.nickname}, ${u.choiceLabel}`}
-                      style={{
-                        width: "100%",
-                        textAlign: "left",
-                        background: active ? C.card : "transparent",
-                        border: "none",
-                        borderLeft: active ? `3px solid ${C.accent}` : "3px solid transparent",
-                        padding: "12px 16px 12px 14px",
-                        cursor: "pointer",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 5,
-                        transition: "background 0.15s",
-                        outline: "none",
-                      }}
+                      style={{ width: "100%", textAlign: "left", background: active ? C.card : "transparent", border: "none", borderLeft: active ? `3px solid ${C.accent}` : "3px solid transparent", padding: "12px 16px 12px 14px", cursor: "pointer", display: "flex", flexDirection: "column", gap: 5, transition: "background 0.15s", outline: "none" }}
                       onFocus={e => { e.currentTarget.style.outline = `2px solid ${C.accent}`; e.currentTarget.style.outlineOffset = "-2px"; }}
                       onBlur={e => { e.currentTarget.style.outline = "none"; }}
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span
-                          style={{
-                            fontFamily: "'Oswald', sans-serif",
-                            fontSize: 16,
-                            fontWeight: 600,
-                            letterSpacing: "0.05em",
-                            color: active ? C.accent : C.text,
-                          }}
-                        >
-                          {u.displayName}
-                        </span>
-                        <ChevronRight
-                          className="unit-arrow"
-                          size={14}
-                          style={{ color: C.textMuted, opacity: active ? 1 : 0, transition: "opacity 0.15s" }}
-                          aria-hidden="true"
-                        />
+                        <span style={{ fontFamily: "'Oswald', sans-serif", fontSize: 16, fontWeight: 600, letterSpacing: "0.05em", color: active ? C.accent : C.text }}>{u.displayName}</span>
+                        <ChevronRight size={14} style={{ color: C.textMuted, opacity: active ? 1 : 0, transition: "opacity 0.15s" }} aria-hidden="true" />
                       </div>
                       <span style={{ fontSize: 12, color: C.textSub }}>{u.nickname}</span>
                       <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 2 }}>
-                        <span
-                          style={{
-                            fontSize: 10,
-                            fontFamily: "'IBM Plex Mono', monospace",
-                            color: choice.color,
-                            background: `${choice.color}18`,
-                            padding: "1px 6px",
-                            borderRadius: 3,
-                            border: `1px solid ${choice.color}30`,
-                          }}
-                        >
-                          {u.choiceLabel}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: 10,
-                            fontFamily: "'IBM Plex Mono', monospace",
-                            color: draw.color,
-                            background: draw.bg,
-                            padding: "1px 6px",
-                            borderRadius: 3,
-                            border: `1px solid ${draw.color}30`,
-                          }}
-                        >
-                          {draw.label}
-                        </span>
+                        <span style={{ fontSize: 10, fontFamily: "'IBM Plex Mono', monospace", color: choice.color, background: `${choice.color}18`, padding: "1px 6px", borderRadius: 3, border: `1px solid ${choice.color}30` }}>{u.choiceLabel}</span>
+                        <span style={{ fontSize: 10, fontFamily: "'IBM Plex Mono', monospace", color: draw.color, background: draw.bg, padding: "1px 6px", borderRadius: 3, border: `1px solid ${draw.color}30` }}>{draw.label}</span>
                       </div>
                     </button>
                   </li>
                 );
               })}
             </ul>
-
-            {/* Sidebar footer */}
-            <div
-              style={{
-                padding: "12px 16px",
-                borderTop: `1px solid ${C.border}`,
-                display: "flex",
-                flexDirection: "column",
-                gap: 4,
-              }}
-            >
-              <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: C.textMuted, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                Application Stack
-              </p>
-              <p style={{ fontSize: 11, color: C.textMuted, lineHeight: 1.5 }}>
+            <div style={{ padding: "12px 16px", borderTop: `1px solid ${C.border}` }}>
+              <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: C.textMuted, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>Application Stack</p>
+              <p style={{ fontSize: 11, color: C.textMuted, lineHeight: 1.6 }}>
                 1st: Point-only (EP99999P)<br />
                 2nd: GMU 79 · 3rd: GMU 62<br />
                 4th: GMU 12
@@ -1250,105 +1596,34 @@ export default function ElkHuntDashboard() {
             </div>
           </nav>
 
-          {/* ── MAIN CONTENT ─────────────────────────────────── */}
-          <main
-            id="elk-main"
-            ref={mainRef}
-            tabIndex={-1}
-            aria-label={`Details for ${unit.displayName}`}
-            style={{
-              flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-              outline: "none",
-            }}
-          >
-            {/* Unit Header */}
-            <div
-              style={{
-                background: C.surface,
-                borderBottom: `1px solid ${C.border}`,
-                padding: "14px 24px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 16,
-                flexWrap: "wrap",
-                flexShrink: 0,
-              }}
-            >
+          {/* MAIN */}
+          <main id="elk-main" ref={mainRef} tabIndex={-1} aria-label={`Details for ${unit.displayName}`} style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", outline: "none" }}>
+
+            {/* Unit header */}
+            <div style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", flexShrink: 0 }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <div style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
-                  <h2
-                    style={{
-                      fontFamily: "'Oswald', sans-serif",
-                      fontSize: 28,
-                      fontWeight: 700,
-                      letterSpacing: "0.06em",
-                      color: C.accent,
-                    }}
-                  >
-                    {unit.displayName}
-                  </h2>
-                  <span
-                    style={{
-                      fontFamily: "'Source Serif 4', Georgia, serif",
-                      fontSize: 16,
-                      fontStyle: "italic",
-                      color: C.textSub,
-                    }}
-                  >
-                    {unit.nickname}
-                  </span>
+                <div style={{ display: "flex", gap: 12, alignItems: "baseline", flexWrap: "wrap" }}>
+                  <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: 28, fontWeight: 700, letterSpacing: "0.06em", color: C.accent }}>{unit.displayName}</h2>
+                  <span style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: 16, fontStyle: "italic", color: C.textSub }}>{unit.nickname}</span>
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                   <MapPin size={12} style={{ color: C.textMuted }} aria-hidden="true" />
-                  <span style={{ fontSize: 12, color: C.textMuted, fontFamily: "'IBM Plex Mono', monospace" }}>
-                    {unit.counties.join(" · ")} Co. · {unit.state}
-                  </span>
+                  <span style={{ fontSize: 12, color: C.textMuted, fontFamily: "'IBM Plex Mono', monospace" }}>{unit.counties.join(" · ")} Co. · {unit.state}</span>
                 </div>
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                <span
-                  style={{
-                    fontFamily: "'IBM Plex Mono', monospace",
-                    fontSize: 12,
-                    color: C.accent,
-                    background: `${C.accent}18`,
-                    border: `1px solid ${C.accent}30`,
-                    padding: "4px 10px",
-                    borderRadius: 6,
-                  }}
-                >
-                  {unit.huntCode}
-                </span>
-                <Badge
-                  label={unit.appLabel}
-                  color={CHOICE_CONFIG[unit.choiceRank].color}
-                />
+                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: C.accent, background: `${C.accent}18`, border: `1px solid ${C.accent}30`, padding: "4px 10px", borderRadius: 6 }}>{unit.huntCode}</span>
+                <Badge label={unit.appLabel} color={CHOICE_CONFIG[unit.choiceRank].color} />
+                <GoHuntBadge slug={unit.gohuntSlug} />
               </div>
             </div>
 
-            {/* Tabs */}
             <TabBar activeTab={activeTab} onChange={setActiveTab} />
 
-            {/* Tab Panels */}
-            <div
-              style={{
-                flex: 1,
-                overflowY: "auto",
-                padding: "20px 24px 32px",
-              }}
-            >
+            {/* Panels */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px 32px" }}>
               {TABS.map(({ id }) => (
-                <div
-                  key={id}
-                  role="tabpanel"
-                  id={`panel-${id}`}
-                  aria-labelledby={`tab-${id}`}
-                  hidden={activeTab !== id}
-                >
+                <div key={id} role="tabpanel" id={`panel-${id}`} aria-labelledby={`tab-${id}`} hidden={activeTab !== id}>
                   {activeTab === id && (
                     <>
                       {id === "overview"     && <OverviewPanel unit={unit} />}
@@ -1356,8 +1631,10 @@ export default function ElkHuntDashboard() {
                       {id === "access"       && <AccessPanel unit={unit} />}
                       {id === "directions"   && <DirectionsPanel unit={unit} />}
                       {id === "lodging"      && <LodgingPanel unit={unit} />}
+                      {id === "waypoints"    && <WaypointsPanel unit={unit} />}
+                      {id === "map"          && <MapPanel unit={unit} />}
                       {id === "integrations" && <IntegrationsPanel />}
-                      {id !== "integrations" && <NotesSection unitId={unit.id} />}
+                      {id !== "integrations" && id !== "waypoints" && <NotesSection unitId={unit.id} />}
                     </>
                   )}
                 </div>
