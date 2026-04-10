@@ -25,11 +25,13 @@ import {
   Save,
   X,
   Package,
+  Menu,
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import './storage'; // Initialize storage
+import { storage } from './storage';
 import GearList from './components/GearList';
+import AddUnitForm from './components/AddUnitForm';
 
 // ═══════════════════════════════════════════════════════════════
 // DESIGN TOKENS
@@ -2813,7 +2815,21 @@ function NotesSection({ unitId }) {
 export default function ElkHuntDashboard() {
   const [activeUnitId, setActiveUnitId] = useState(UNITS[2].id);
   const [activeTab, setActiveTab] = useState('overview');
+  const [customUnits, setCustomUnits] = useState([]);
+  const [showAddUnitForm, setShowAddUnitForm] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const mainRef = useRef(null);
+
+  // Load custom units from storage
+  useEffect(() => {
+    const loadCustomUnits = async () => {
+      const saved = await storage.get('elk-custom-units');
+      if (saved && Array.isArray(saved)) {
+        setCustomUnits(saved);
+      }
+    };
+    loadCustomUnits();
+  }, []);
 
   useEffect(() => {
     if (!document.getElementById('elk-gf')) {
@@ -2825,11 +2841,20 @@ export default function ElkHuntDashboard() {
     }
   }, []);
 
-  const unit = UNITS.find(u => u.id === activeUnitId) ?? UNITS[0];
+  // Merge default and custom units
+  const allUnits = [...UNITS, ...customUnits];
+
+  const unit = allUnits.find(u => u.id === activeUnitId) ?? allUnits[0];
   const switchUnit = id => {
     setActiveUnitId(id);
     setActiveTab('overview');
+    setMobileMenuOpen(false); // Close mobile menu on selection
     mainRef.current?.focus();
+  };
+
+  const handleUnitAdded = newUnit => {
+    setCustomUnits(prev => [...prev, newUnit]);
+    setActiveUnitId(newUnit.id);
   };
 
   return (
@@ -2848,6 +2873,73 @@ export default function ElkHuntDashboard() {
         .custom-marker { background: transparent !important; border: none !important; }
         .leaflet-popup-content-wrapper { background: ${C.card}; color: ${C.text}; border: 1px solid ${C.border}; }
         .leaflet-popup-tip { background: ${C.card}; border: 1px solid ${C.border}; }
+
+        /* Mobile Responsive Styles */
+        .mobile-menu-btn { display: none; }
+        .mobile-overlay { display: none; }
+        .sidebar {
+          position: relative;
+        }
+
+        @media (max-width: 768px) {
+          /* Show mobile menu button */
+          .mobile-menu-btn {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+          }
+
+          /* Mobile sidebar - drawer style */
+          .sidebar {
+            position: fixed !important;
+            top: 56px !important;
+            bottom: 0 !important;
+            left: ${mobileMenuOpen ? '0' : '-220px'} !important;
+            z-index: 999 !important;
+            transition: left 0.3s ease !important;
+          }
+
+          /* Show overlay when menu is open */
+          .mobile-overlay {
+            display: ${mobileMenuOpen ? 'block' : 'none'} !important;
+          }
+
+          /* Hide desktop sidebar label */
+          .desktop-only { display: none !important; }
+
+          /* Tab bar horizontal scroll */
+          [role="tablist"] {
+            overflow-x: auto !important;
+            scrollbar-width: thin;
+            -webkit-overflow-scrolling: touch;
+          }
+
+          /* Larger touch targets on mobile */
+          [role="tab"] {
+            min-width: auto !important;
+            padding: 12px 16px !important;
+          }
+
+          button, a {
+            min-height: 44px;
+          }
+
+          /* Main content - full width on mobile */
+          .main-content {
+            width: 100% !important;
+          }
+        }
+
+        @media (max-width: 640px) {
+          /* Smaller header on mobile */
+          .app-title { font-size: 14px !important; }
+          .app-subtitle { display: none !important; }
+
+          /* Compact padding on small screens */
+          .content-padding {
+            padding: 12px !important;
+          }
+        }
       `}</style>
 
       <a href="#elk-main" className="skip-link">
@@ -2870,7 +2962,7 @@ export default function ElkHuntDashboard() {
           style={{
             background: C.surface,
             borderBottom: `1px solid ${C.border}`,
-            padding: '0 24px',
+            padding: '0 16px',
             height: 56,
             display: 'flex',
             alignItems: 'center',
@@ -2879,12 +2971,30 @@ export default function ElkHuntDashboard() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {/* Mobile Menu Button */}
+            <button
+              className="mobile-menu-btn"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: C.text,
+                cursor: 'pointer',
+                padding: '8px',
+                display: 'none',
+              }}
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+
             <Mountain
               size={20}
               style={{ color: C.accent }}
               aria-hidden="true"
             />
             <h1
+              className="app-title"
               style={{
                 fontFamily: "'Oswald', sans-serif",
                 fontSize: 18,
@@ -2897,6 +3007,7 @@ export default function ElkHuntDashboard() {
               Elk Hunt Planner
             </h1>
             <span
+              className="app-subtitle"
               style={{
                 fontFamily: "'IBM Plex Mono', monospace",
                 fontSize: 10,
@@ -2941,10 +3052,29 @@ export default function ElkHuntDashboard() {
         </header>
 
         {/* BODY */}
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
+          {/* Mobile Overlay */}
+          {mobileMenuOpen && (
+            <div
+              className="mobile-overlay"
+              onClick={() => setMobileMenuOpen(false)}
+              style={{
+                position: 'fixed',
+                top: 56,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                zIndex: 998,
+                display: 'block',
+              }}
+            />
+          )}
+
           {/* SIDEBAR */}
           <nav
             aria-label="Colorado hunt units"
+            className="sidebar"
             style={{
               width: 220,
               background: C.surface,
@@ -2959,6 +3089,9 @@ export default function ElkHuntDashboard() {
               style={{
                 padding: '14px 16px 10px',
                 borderBottom: `1px solid ${C.border}`,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
               }}
             >
               <p
@@ -2970,8 +3103,37 @@ export default function ElkHuntDashboard() {
                   color: C.textMuted,
                 }}
               >
-                Applied Units · 2026
+                Hunt Units · 2026
               </p>
+              <button
+                onClick={() => setShowAddUnitForm(true)}
+                style={{
+                  background: 'transparent',
+                  border: `1px solid ${C.accent}`,
+                  borderRadius: '3px',
+                  color: C.accent,
+                  padding: '4px 8px',
+                  cursor: 'pointer',
+                  fontSize: 10,
+                  fontFamily: "'IBM Plex Mono', monospace",
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.backgroundColor = C.accent;
+                  e.currentTarget.style.color = C.white;
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = C.accent;
+                }}
+                title="Add new hunt unit"
+              >
+                <Plus size={12} aria-hidden="true" />
+                Add
+              </button>
             </div>
             <ul
               role="list"
@@ -2982,7 +3144,7 @@ export default function ElkHuntDashboard() {
                 flex: 1,
               }}
             >
-              {UNITS.map(u => {
+              {allUnits.map(u => {
                 const active = u.id === activeUnitId;
                 const draw = DRAW_CONFIG[u.draw];
                 const choice = CHOICE_CONFIG[u.choiceRank];
@@ -3082,6 +3244,22 @@ export default function ElkHuntDashboard() {
                         >
                           {draw.label}
                         </span>
+                        {u.isCustom && (
+                          <span
+                            style={{
+                              fontSize: 10,
+                              fontFamily: "'IBM Plex Mono', monospace",
+                              color: C.accent,
+                              background: `${C.accent}18`,
+                              padding: '1px 6px',
+                              borderRadius: 3,
+                              border: `1px solid ${C.accent}30`,
+                            }}
+                            title="Custom unit"
+                          >
+                            CUSTOM
+                          </span>
+                        )}
                       </div>
                     </button>
                   </li>
@@ -3122,6 +3300,7 @@ export default function ElkHuntDashboard() {
             ref={mainRef}
             tabIndex={-1}
             aria-label={`Details for ${unit.displayName}`}
+            className="main-content"
             style={{
               flex: 1,
               display: 'flex',
@@ -3132,6 +3311,7 @@ export default function ElkHuntDashboard() {
           >
             {/* Unit header */}
             <div
+              className="content-padding"
               style={{
                 background: C.surface,
                 borderBottom: `1px solid ${C.border}`,
@@ -3232,6 +3412,7 @@ export default function ElkHuntDashboard() {
 
             {/* Panels */}
             <div
+              className="content-padding"
               style={{ flex: 1, overflowY: 'auto', padding: '20px 24px 32px' }}
             >
               {TABS.map(({ id }) => (
@@ -3264,6 +3445,14 @@ export default function ElkHuntDashboard() {
           </main>
         </div>
       </div>
+
+      {/* Add Unit Form Modal */}
+      {showAddUnitForm && (
+        <AddUnitForm
+          onClose={() => setShowAddUnitForm(false)}
+          onUnitAdded={handleUnitAdded}
+        />
+      )}
     </>
   );
 }
