@@ -11,7 +11,6 @@ import {
   ChevronDown,
   ChevronRight,
   ShoppingCart,
-  ExternalLink,
   Star,
   Award,
 } from 'lucide-react';
@@ -116,7 +115,7 @@ const RECOMMENDED_GEAR = {
       searchTerms: 'Marsupial Gear Enclosed Bino Harness',
     },
   ],
-  'Clothes': [
+  Clothes: [
     {
       name: 'Sitka Mountain Pant',
       category: 'Pants',
@@ -188,7 +187,7 @@ const RECOMMENDED_GEAR = {
       searchTerms: 'North American Rescue CAT Gen 7 tourniquet',
     },
   ],
-  'Camp': [
+  Camp: [
     {
       name: 'Stone Glacier Skyscraper 2P',
       category: 'Tent',
@@ -241,14 +240,17 @@ const RECOMMENDED_GEAR = {
 };
 
 // Parse CSV data from the ElkGearlist.csv file
-const parseGearCSV = (csvText) => {
+const parseGearCSV = csvText => {
   const lines = csvText.trim().split('\n');
   const categories = {};
 
   if (lines.length === 0) return categories;
 
   // First line contains category headers
-  const headers = lines[0].split(',').map(h => h.trim()).filter(h => h);
+  const headers = lines[0]
+    .split(',')
+    .map(h => h.trim())
+    .filter(h => h);
 
   // Initialize categories
   headers.forEach(header => {
@@ -275,7 +277,8 @@ const parseGearCSV = (csvText) => {
 };
 
 // Initial gear data from CSV
-const initialGearData = parseGearCSV(`Pack / In the field ,Bino Harness ,Clothes,Pill Bag,First Aid ,Kill Kit,License Bag,Possibles Pouch ,Food & Drink,,Camp
+const initialGearData =
+  parseGearCSV(`Pack / In the field ,Bino Harness ,Clothes,Pill Bag,First Aid ,Kill Kit,License Bag,Possibles Pouch ,Food & Drink,,Camp
 Treking Poles ,Binos,apex pant,ibuprofen,Adventure UL Med Kit 7  minus pills,Knife ,Elk tags,Lighter with duct tape,"Coffee & supplies (filters, pour over)",Foot Powder ,Tarp
 Sit Pad,Bear Spray,ascent pant,acetaminophen,wrap for sprains and breaks,saw,Small Game License,Aqua Tabs,,Band-Aids,Rope
 Bino Harness ,Game Calls,Socks,contacts,Tourniquet,gloves,Copy of Hunter Safety,Signal Mirror,,Anti-bactirial oinment,Paracord
@@ -321,7 +324,8 @@ const GearList = () => {
   const [newItemName, setNewItemName] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showRecommended, setShowRecommended] = useState(false);
-  const [selectedRecommendedCategory, setSelectedRecommendedCategory] = useState(null);
+  const [selectedRecommendedCategory, setSelectedRecommendedCategory] =
+    useState(null);
 
   // Load gear data from storage or use initial data
   useEffect(() => {
@@ -331,13 +335,13 @@ const GearList = () => {
         setGearData(saved);
         // Expand all categories by default
         const expanded = {};
-        Object.keys(saved).forEach(cat => expanded[cat] = true);
+        Object.keys(saved).forEach(cat => (expanded[cat] = true));
         setExpandedCategories(expanded);
       } else {
         setGearData(initialGearData);
         // Expand all categories by default
         const expanded = {};
-        Object.keys(initialGearData).forEach(cat => expanded[cat] = true);
+        Object.keys(initialGearData).forEach(cat => (expanded[cat] = true));
         setExpandedCategories(expanded);
       }
     };
@@ -352,10 +356,10 @@ const GearList = () => {
   }, [gearData]);
 
   // Toggle category expansion
-  const toggleCategory = (category) => {
+  const toggleCategory = category => {
     setExpandedCategories(prev => ({
       ...prev,
-      [category]: !prev[category]
+      [category]: !prev[category],
     }));
   };
 
@@ -365,7 +369,7 @@ const GearList = () => {
       ...prev,
       [category]: prev[category].map(item =>
         item.id === itemId ? { ...item, packed: !item.packed } : item
-      )
+      ),
     }));
   };
 
@@ -373,12 +377,12 @@ const GearList = () => {
   const deleteItem = (category, itemId) => {
     setGearData(prev => ({
       ...prev,
-      [category]: prev[category].filter(item => item.id !== itemId)
+      [category]: prev[category].filter(item => item.id !== itemId),
     }));
   };
 
   // Start editing item
-  const startEdit = (item) => {
+  const startEdit = item => {
     setEditingItem(item.id);
     setEditValue(item.name);
   };
@@ -390,7 +394,7 @@ const GearList = () => {
         ...prev,
         [category]: prev[category].map(item =>
           item.id === itemId ? { ...item, name: editValue.trim() } : item
-        )
+        ),
       }));
     }
     setEditingItem(null);
@@ -404,7 +408,7 @@ const GearList = () => {
   };
 
   // Add new item to category
-  const addItem = (category) => {
+  const addItem = category => {
     if (newItemName.trim()) {
       const newItem = {
         id: `${category}-${Date.now()}`,
@@ -414,7 +418,7 @@ const GearList = () => {
       };
       setGearData(prev => ({
         ...prev,
-        [category]: [...(prev[category] || []), newItem]
+        [category]: [...(prev[category] || []), newItem],
       }));
       setNewItemName('');
       setAddingToCategory(null);
@@ -422,7 +426,7 @@ const GearList = () => {
   };
 
   // Search for recommended item online
-  const searchOnline = (searchTerms) => {
+  const searchOnline = searchTerms => {
     const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchTerms)}`;
     window.open(googleSearchUrl, '_blank', 'noopener,noreferrer');
   };
@@ -437,7 +441,7 @@ const GearList = () => {
     };
     setGearData(prev => ({
       ...prev,
-      [category]: [...(prev[category] || []), newItem]
+      [category]: [...(prev[category] || []), newItem],
     }));
   };
 
@@ -470,9 +474,10 @@ const GearList = () => {
     const foundCategories = new Set(searchResults.map(item => item.category));
 
     // Suggest items from the same categories
-    const suggestions = allItems.filter(item =>
-      foundCategories.has(item.category) &&
-      !item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const suggestions = allItems.filter(
+      item =>
+        foundCategories.has(item.category) &&
+        !item.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return suggestions.slice(0, 5); // Limit to 5 suggestions
@@ -486,69 +491,95 @@ const GearList = () => {
       total += categoryItems.length;
       packed += categoryItems.filter(item => item.packed).length;
     });
-    return { total, packed, percentage: total > 0 ? Math.round((packed / total) * 100) : 0 };
+    return {
+      total,
+      packed,
+      percentage: total > 0 ? Math.round((packed / total) * 100) : 0,
+    };
   }, [gearData]);
 
   return (
-    <div style={{
-      backgroundColor: C.surface,
-      borderRadius: '8px',
-      border: `1px solid ${C.border}`,
-      padding: '20px',
-      color: C.text,
-    }}>
+    <div
+      style={{
+        backgroundColor: C.surface,
+        borderRadius: '8px',
+        border: `1px solid ${C.border}`,
+        padding: '20px',
+        color: C.text,
+      }}
+    >
       {/* Header */}
       <div style={{ marginBottom: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            marginBottom: '12px',
+          }}
+        >
           <Package size={28} color={C.accent} />
-          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600 }}>Elk Hunt Gear List</h2>
+          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600 }}>
+            Elk Hunt Gear List
+          </h2>
         </div>
 
         {/* Progress Bar */}
         <div style={{ marginBottom: '16px' }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: '4px',
-            fontSize: '14px',
-            color: C.textSub,
-          }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginBottom: '4px',
+              fontSize: '14px',
+              color: C.textSub,
+            }}
+          >
             <span>Packing Progress</span>
-            <span>{packingStats.packed} / {packingStats.total} ({packingStats.percentage}%)</span>
+            <span>
+              {packingStats.packed} / {packingStats.total} (
+              {packingStats.percentage}%)
+            </span>
           </div>
-          <div style={{
-            width: '100%',
-            height: '8px',
-            backgroundColor: C.card,
-            borderRadius: '4px',
-            overflow: 'hidden',
-          }}>
-            <div style={{
-              width: `${packingStats.percentage}%`,
-              height: '100%',
-              backgroundColor: C.green,
-              transition: 'width 0.3s ease',
-            }} />
+          <div
+            style={{
+              width: '100%',
+              height: '8px',
+              backgroundColor: C.card,
+              borderRadius: '4px',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                width: `${packingStats.percentage}%`,
+                height: '100%',
+                backgroundColor: C.green,
+                transition: 'width 0.3s ease',
+              }}
+            />
           </div>
         </div>
 
         {/* Search Bar */}
         <div style={{ position: 'relative' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 12px',
-            backgroundColor: C.card,
-            border: `1px solid ${C.border}`,
-            borderRadius: '6px',
-          }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 12px',
+              backgroundColor: C.card,
+              border: `1px solid ${C.border}`,
+              borderRadius: '6px',
+            }}
+          >
             <Search size={18} color={C.textMuted} />
             <input
               type="text"
               placeholder="Search gear items..."
               value={searchQuery}
-              onChange={(e) => {
+              onChange={e => {
                 setSearchQuery(e.target.value);
                 setShowSuggestions(e.target.value.trim().length > 0);
               }}
@@ -584,29 +615,33 @@ const GearList = () => {
 
           {/* Search Results & Suggestions */}
           {showSuggestions && searchQuery && (
-            <div style={{
-              position: 'absolute',
-              top: '100%',
-              left: 0,
-              right: 0,
-              marginTop: '4px',
-              backgroundColor: C.card,
-              border: `1px solid ${C.border}`,
-              borderRadius: '6px',
-              maxHeight: '300px',
-              overflowY: 'auto',
-              zIndex: 10,
-              boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
-            }}>
+            <div
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                marginTop: '4px',
+                backgroundColor: C.card,
+                border: `1px solid ${C.border}`,
+                borderRadius: '6px',
+                maxHeight: '300px',
+                overflowY: 'auto',
+                zIndex: 10,
+                boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+              }}
+            >
               {searchResults.length > 0 && (
                 <div style={{ padding: '8px' }}>
-                  <div style={{
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    color: C.textSub,
-                    marginBottom: '4px',
-                    textTransform: 'uppercase',
-                  }}>
+                  <div
+                    style={{
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: C.textSub,
+                      marginBottom: '4px',
+                      textTransform: 'uppercase',
+                    }}
+                  >
                     Found Items ({searchResults.length})
                   </div>
                   {searchResults.map(item => (
@@ -621,16 +656,24 @@ const GearList = () => {
                         justifyContent: 'space-between',
                         alignItems: 'center',
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.cardHover}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      onMouseEnter={e =>
+                        (e.currentTarget.style.backgroundColor = C.cardHover)
+                      }
+                      onMouseLeave={e =>
+                        (e.currentTarget.style.backgroundColor = 'transparent')
+                      }
                       onClick={() => {
                         togglePacked(item.category, item.id);
                         setShowSuggestions(false);
                       }}
                     >
                       <div>
-                        <div style={{ fontSize: '14px', color: C.text }}>{item.name}</div>
-                        <div style={{ fontSize: '12px', color: C.textMuted }}>{item.category}</div>
+                        <div style={{ fontSize: '14px', color: C.text }}>
+                          {item.name}
+                        </div>
+                        <div style={{ fontSize: '12px', color: C.textMuted }}>
+                          {item.category}
+                        </div>
                       </div>
                       {item.packed && <Check size={16} color={C.green} />}
                     </div>
@@ -639,17 +682,21 @@ const GearList = () => {
               )}
 
               {suggestedItems.length > 0 && (
-                <div style={{ padding: '8px', borderTop: `1px solid ${C.border}` }}>
-                  <div style={{
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    color: C.accent,
-                    marginBottom: '4px',
-                    textTransform: 'uppercase',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                  }}>
+                <div
+                  style={{ padding: '8px', borderTop: `1px solid ${C.border}` }}
+                >
+                  <div
+                    style={{
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: C.accent,
+                      marginBottom: '4px',
+                      textTransform: 'uppercase',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
                     <Lightbulb size={14} />
                     Related Items
                   </div>
@@ -665,16 +712,24 @@ const GearList = () => {
                         justifyContent: 'space-between',
                         alignItems: 'center',
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.cardHover}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      onMouseEnter={e =>
+                        (e.currentTarget.style.backgroundColor = C.cardHover)
+                      }
+                      onMouseLeave={e =>
+                        (e.currentTarget.style.backgroundColor = 'transparent')
+                      }
                       onClick={() => {
                         togglePacked(item.category, item.id);
                         setShowSuggestions(false);
                       }}
                     >
                       <div>
-                        <div style={{ fontSize: '14px', color: C.text }}>{item.name}</div>
-                        <div style={{ fontSize: '12px', color: C.textMuted }}>{item.category}</div>
+                        <div style={{ fontSize: '14px', color: C.text }}>
+                          {item.name}
+                        </div>
+                        <div style={{ fontSize: '12px', color: C.textMuted }}>
+                          {item.category}
+                        </div>
                       </div>
                       {item.packed && <Check size={16} color={C.green} />}
                     </div>
@@ -683,12 +738,14 @@ const GearList = () => {
               )}
 
               {searchResults.length === 0 && (
-                <div style={{
-                  padding: '16px',
-                  textAlign: 'center',
-                  color: C.textMuted,
-                  fontSize: '14px',
-                }}>
+                <div
+                  style={{
+                    padding: '16px',
+                    textAlign: 'center',
+                    color: C.textMuted,
+                    fontSize: '14px',
+                  }}
+                >
                   No items found
                 </div>
               )}
@@ -698,13 +755,15 @@ const GearList = () => {
       </div>
 
       {/* Recommended Gear Section */}
-      <div style={{
-        backgroundColor: C.card,
-        border: `2px solid ${C.accent}`,
-        borderRadius: '8px',
-        marginBottom: '20px',
-        overflow: 'hidden',
-      }}>
+      <div
+        style={{
+          backgroundColor: C.card,
+          border: `2px solid ${C.accent}`,
+          borderRadius: '8px',
+          marginBottom: '20px',
+          overflow: 'hidden',
+        }}
+      >
         {/* Header */}
         <div
           onClick={() => setShowRecommended(!showRecommended)}
@@ -717,17 +776,37 @@ const GearList = () => {
             alignItems: 'center',
             transition: 'background-color 0.2s',
           }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.border}
-          onMouseLeave={(e) => e.currentTarget.style.background = `linear-gradient(135deg, ${C.cardHover} 0%, ${C.card} 100%)`}
+          onMouseEnter={e => (e.currentTarget.style.backgroundColor = C.border)}
+          onMouseLeave={e =>
+            (e.currentTarget.style.background = `linear-gradient(135deg, ${C.cardHover} 0%, ${C.card} 100%)`)
+          }
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {showRecommended ? <ChevronDown size={20} color={C.accent} /> : <ChevronRight size={20} color={C.accent} />}
+            {showRecommended ? (
+              <ChevronDown size={20} color={C.accent} />
+            ) : (
+              <ChevronRight size={20} color={C.accent} />
+            )}
             <Award size={22} color={C.accent} />
             <div>
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: C.accent }}>
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: '18px',
+                  fontWeight: 600,
+                  color: C.accent,
+                }}
+              >
                 Buy Once, Cry Once
               </h3>
-              <p style={{ margin: 0, fontSize: '12px', color: C.textSub, marginTop: '2px' }}>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: '12px',
+                  color: C.textSub,
+                  marginTop: '2px',
+                }}
+              >
                 Top-rated gear recommendations from western big game hunters
               </p>
             </div>
@@ -739,24 +818,34 @@ const GearList = () => {
         {showRecommended && (
           <div style={{ padding: '16px 20px' }}>
             {/* Category Selection */}
-            <div style={{
-              display: 'flex',
-              gap: '8px',
-              flexWrap: 'wrap',
-              marginBottom: '16px',
-              paddingBottom: '16px',
-              borderBottom: `1px solid ${C.border}`,
-            }}>
+            <div
+              style={{
+                display: 'flex',
+                gap: '8px',
+                flexWrap: 'wrap',
+                marginBottom: '16px',
+                paddingBottom: '16px',
+                borderBottom: `1px solid ${C.border}`,
+              }}
+            >
               {Object.keys(RECOMMENDED_GEAR).map(category => (
                 <button
                   key={category}
-                  onClick={() => setSelectedRecommendedCategory(
-                    selectedRecommendedCategory === category ? null : category
-                  )}
+                  onClick={() =>
+                    setSelectedRecommendedCategory(
+                      selectedRecommendedCategory === category ? null : category
+                    )
+                  }
                   style={{
                     padding: '8px 14px',
-                    backgroundColor: selectedRecommendedCategory === category ? C.accent : C.surface,
-                    color: selectedRecommendedCategory === category ? C.white : C.text,
+                    backgroundColor:
+                      selectedRecommendedCategory === category
+                        ? C.accent
+                        : C.surface,
+                    color:
+                      selectedRecommendedCategory === category
+                        ? C.white
+                        : C.text,
                     border: `1px solid ${selectedRecommendedCategory === category ? C.accent : C.border}`,
                     borderRadius: '20px',
                     cursor: 'pointer',
@@ -764,13 +853,13 @@ const GearList = () => {
                     fontWeight: 500,
                     transition: 'all 0.2s',
                   }}
-                  onMouseEnter={(e) => {
+                  onMouseEnter={e => {
                     if (selectedRecommendedCategory !== category) {
                       e.currentTarget.style.backgroundColor = C.cardHover;
                       e.currentTarget.style.borderColor = C.borderLight;
                     }
                   }}
-                  onMouseLeave={(e) => {
+                  onMouseLeave={e => {
                     if (selectedRecommendedCategory !== category) {
                       e.currentTarget.style.backgroundColor = C.surface;
                       e.currentTarget.style.borderColor = C.border;
@@ -783,135 +872,167 @@ const GearList = () => {
             </div>
 
             {/* Recommended Items */}
-            {selectedRecommendedCategory && RECOMMENDED_GEAR[selectedRecommendedCategory] && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {RECOMMENDED_GEAR[selectedRecommendedCategory].map((item, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      backgroundColor: C.surface,
-                      border: `1px solid ${C.border}`,
-                      borderRadius: '6px',
-                      padding: '14px',
-                      transition: 'all 0.2s',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = C.cardHover;
-                      e.currentTarget.style.borderColor = C.borderLight;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = C.surface;
-                      e.currentTarget.style.borderColor = C.border;
-                    }}
-                  >
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start',
-                      gap: '12px',
-                      marginBottom: '8px',
-                    }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{
-                          fontSize: '15px',
-                          fontWeight: 600,
-                          color: C.text,
-                          marginBottom: '4px',
-                        }}>
-                          {item.name}
-                        </div>
-                        <div style={{
-                          fontSize: '12px',
-                          color: C.accent,
-                          marginBottom: '8px',
-                          fontWeight: 500,
-                        }}>
-                          {item.category}
-                        </div>
-                        <div style={{
-                          fontSize: '13px',
-                          color: C.textSub,
-                          lineHeight: '1.5',
-                        }}>
-                          {item.why}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div style={{
-                      display: 'flex',
-                      gap: '8px',
-                      marginTop: '12px',
-                    }}>
-                      <button
-                        onClick={() => searchOnline(item.searchTerms)}
+            {selectedRecommendedCategory &&
+              RECOMMENDED_GEAR[selectedRecommendedCategory] && (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px',
+                  }}
+                >
+                  {RECOMMENDED_GEAR[selectedRecommendedCategory].map(
+                    (item, index) => (
+                      <div
+                        key={index}
                         style={{
-                          flex: 1,
-                          padding: '8px 12px',
-                          backgroundColor: C.green,
-                          color: C.white,
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          fontWeight: 500,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px',
-                          transition: 'background-color 0.2s',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.greenLight}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = C.green}
-                      >
-                        <ShoppingCart size={14} />
-                        Find Online
-                      </button>
-                      <button
-                        onClick={() => addRecommendedItem(item, selectedRecommendedCategory)}
-                        style={{
-                          flex: 1,
-                          padding: '8px 12px',
-                          backgroundColor: 'transparent',
-                          color: C.accent,
-                          border: `1px solid ${C.accent}`,
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          fontWeight: 500,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px',
+                          backgroundColor: C.surface,
+                          border: `1px solid ${C.border}`,
+                          borderRadius: '6px',
+                          padding: '14px',
                           transition: 'all 0.2s',
                         }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = C.accent;
-                          e.currentTarget.style.color = C.white;
+                        onMouseEnter={e => {
+                          e.currentTarget.style.backgroundColor = C.cardHover;
+                          e.currentTarget.style.borderColor = C.borderLight;
                         }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                          e.currentTarget.style.color = C.accent;
+                        onMouseLeave={e => {
+                          e.currentTarget.style.backgroundColor = C.surface;
+                          e.currentTarget.style.borderColor = C.border;
                         }}
                       >
-                        <Plus size={14} />
-                        Add to My Gear
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                            gap: '12px',
+                            marginBottom: '8px',
+                          }}
+                        >
+                          <div style={{ flex: 1 }}>
+                            <div
+                              style={{
+                                fontSize: '15px',
+                                fontWeight: 600,
+                                color: C.text,
+                                marginBottom: '4px',
+                              }}
+                            >
+                              {item.name}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: '12px',
+                                color: C.accent,
+                                marginBottom: '8px',
+                                fontWeight: 500,
+                              }}
+                            >
+                              {item.category}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: '13px',
+                                color: C.textSub,
+                                lineHeight: '1.5',
+                              }}
+                            >
+                              {item.why}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div
+                          style={{
+                            display: 'flex',
+                            gap: '8px',
+                            marginTop: '12px',
+                          }}
+                        >
+                          <button
+                            onClick={() => searchOnline(item.searchTerms)}
+                            style={{
+                              flex: 1,
+                              padding: '8px 12px',
+                              backgroundColor: C.green,
+                              color: C.white,
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '13px',
+                              fontWeight: 500,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '6px',
+                              transition: 'background-color 0.2s',
+                            }}
+                            onMouseEnter={e =>
+                              (e.currentTarget.style.backgroundColor =
+                                C.greenLight)
+                            }
+                            onMouseLeave={e =>
+                              (e.currentTarget.style.backgroundColor = C.green)
+                            }
+                          >
+                            <ShoppingCart size={14} />
+                            Find Online
+                          </button>
+                          <button
+                            onClick={() =>
+                              addRecommendedItem(
+                                item,
+                                selectedRecommendedCategory
+                              )
+                            }
+                            style={{
+                              flex: 1,
+                              padding: '8px 12px',
+                              backgroundColor: 'transparent',
+                              color: C.accent,
+                              border: `1px solid ${C.accent}`,
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '13px',
+                              fontWeight: 500,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '6px',
+                              transition: 'all 0.2s',
+                            }}
+                            onMouseEnter={e => {
+                              e.currentTarget.style.backgroundColor = C.accent;
+                              e.currentTarget.style.color = C.white;
+                            }}
+                            onMouseLeave={e => {
+                              e.currentTarget.style.backgroundColor =
+                                'transparent';
+                              e.currentTarget.style.color = C.accent;
+                            }}
+                          >
+                            <Plus size={14} />
+                            Add to My Gear
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+              )}
 
             {/* No category selected message */}
             {!selectedRecommendedCategory && (
-              <div style={{
-                textAlign: 'center',
-                padding: '24px',
-                color: C.textMuted,
-                fontSize: '14px',
-              }}>
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '24px',
+                  color: C.textMuted,
+                  fontSize: '14px',
+                }}
+              >
                 Select a category above to view recommended gear
               </div>
             )}
@@ -948,24 +1069,38 @@ const GearList = () => {
                   backgroundColor: C.cardHover,
                   transition: 'background-color 0.2s',
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.border}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = C.cardHover}
+                onMouseEnter={e =>
+                  (e.currentTarget.style.backgroundColor = C.border)
+                }
+                onMouseLeave={e =>
+                  (e.currentTarget.style.backgroundColor = C.cardHover)
+                }
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-                  <span style={{ fontWeight: 600, fontSize: '16px' }}>{category}</span>
-                  <span style={{
-                    fontSize: '12px',
-                    color: C.textSub,
-                    backgroundColor: C.card,
-                    padding: '2px 8px',
-                    borderRadius: '10px',
-                  }}>
+                <div
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  {isExpanded ? (
+                    <ChevronDown size={20} />
+                  ) : (
+                    <ChevronRight size={20} />
+                  )}
+                  <span style={{ fontWeight: 600, fontSize: '16px' }}>
+                    {category}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '12px',
+                      color: C.textSub,
+                      backgroundColor: C.card,
+                      padding: '2px 8px',
+                      borderRadius: '10px',
+                    }}
+                  >
                     {categoryPacked}/{categoryTotal}
                   </span>
                 </div>
                 <button
-                  onClick={(e) => {
+                  onClick={e => {
                     e.stopPropagation();
                     setAddingToCategory(category);
                   }}
@@ -982,11 +1117,11 @@ const GearList = () => {
                     fontSize: '12px',
                     transition: 'all 0.2s',
                   }}
-                  onMouseEnter={(e) => {
+                  onMouseEnter={e => {
                     e.currentTarget.style.backgroundColor = C.accent;
                     e.currentTarget.style.color = C.white;
                   }}
-                  onMouseLeave={(e) => {
+                  onMouseLeave={e => {
                     e.currentTarget.style.backgroundColor = 'transparent';
                     e.currentTarget.style.color = C.accent;
                   }}
@@ -1001,20 +1136,22 @@ const GearList = () => {
                 <div style={{ padding: '8px' }}>
                   {/* Add New Item Form */}
                   {addingToCategory === category && (
-                    <div style={{
-                      padding: '8px',
-                      backgroundColor: C.surface,
-                      borderRadius: '4px',
-                      marginBottom: '8px',
-                      display: 'flex',
-                      gap: '8px',
-                    }}>
+                    <div
+                      style={{
+                        padding: '8px',
+                        backgroundColor: C.surface,
+                        borderRadius: '4px',
+                        marginBottom: '8px',
+                        display: 'flex',
+                        gap: '8px',
+                      }}
+                    >
                       <input
                         type="text"
                         placeholder="New item name..."
                         value={newItemName}
-                        onChange={(e) => setNewItemName(e.target.value)}
-                        onKeyPress={(e) => {
+                        onChange={e => setNewItemName(e.target.value)}
+                        onKeyPress={e => {
                           if (e.key === 'Enter') addItem(category);
                           if (e.key === 'Escape') {
                             setAddingToCategory(null);
@@ -1080,14 +1217,18 @@ const GearList = () => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
-                        backgroundColor: item.packed ? C.surface : 'transparent',
+                        backgroundColor: item.packed
+                          ? C.surface
+                          : 'transparent',
                         transition: 'background-color 0.2s',
                       }}
-                      onMouseEnter={(e) => {
-                        if (!item.packed) e.currentTarget.style.backgroundColor = C.cardHover;
+                      onMouseEnter={e => {
+                        if (!item.packed)
+                          e.currentTarget.style.backgroundColor = C.cardHover;
                       }}
-                      onMouseLeave={(e) => {
-                        if (!item.packed) e.currentTarget.style.backgroundColor = 'transparent';
+                      onMouseLeave={e => {
+                        if (!item.packed)
+                          e.currentTarget.style.backgroundColor = 'transparent';
                       }}
                     >
                       {/* Checkbox */}
@@ -1108,8 +1249,8 @@ const GearList = () => {
                         <input
                           type="text"
                           value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          onKeyPress={(e) => {
+                          onChange={e => setEditValue(e.target.value)}
+                          onKeyPress={e => {
                             if (e.key === 'Enter') saveEdit(category, item.id);
                             if (e.key === 'Escape') cancelEdit();
                           }}
@@ -1131,7 +1272,9 @@ const GearList = () => {
                             flex: 1,
                             fontSize: '14px',
                             color: item.packed ? C.textMuted : C.text,
-                            textDecoration: item.packed ? 'line-through' : 'none',
+                            textDecoration: item.packed
+                              ? 'line-through'
+                              : 'none',
                           }}
                         >
                           {item.name}
@@ -1184,8 +1327,12 @@ const GearList = () => {
                                 alignItems: 'center',
                                 color: C.textMuted,
                               }}
-                              onMouseEnter={(e) => e.currentTarget.style.color = C.accent}
-                              onMouseLeave={(e) => e.currentTarget.style.color = C.textMuted}
+                              onMouseEnter={e =>
+                                (e.currentTarget.style.color = C.accent)
+                              }
+                              onMouseLeave={e =>
+                                (e.currentTarget.style.color = C.textMuted)
+                              }
                             >
                               <Edit3 size={14} />
                             </button>
@@ -1200,8 +1347,12 @@ const GearList = () => {
                                 alignItems: 'center',
                                 color: C.textMuted,
                               }}
-                              onMouseEnter={(e) => e.currentTarget.style.color = C.red}
-                              onMouseLeave={(e) => e.currentTarget.style.color = C.textMuted}
+                              onMouseEnter={e =>
+                                (e.currentTarget.style.color = C.red)
+                              }
+                              onMouseLeave={e =>
+                                (e.currentTarget.style.color = C.textMuted)
+                              }
                             >
                               <Trash2 size={14} />
                             </button>
@@ -1212,12 +1363,14 @@ const GearList = () => {
                   ))}
 
                   {items.length === 0 && (
-                    <div style={{
-                      padding: '16px',
-                      textAlign: 'center',
-                      color: C.textMuted,
-                      fontSize: '14px',
-                    }}>
+                    <div
+                      style={{
+                        padding: '16px',
+                        textAlign: 'center',
+                        color: C.textMuted,
+                        fontSize: '14px',
+                      }}
+                    >
                       No items in this category
                     </div>
                   )}

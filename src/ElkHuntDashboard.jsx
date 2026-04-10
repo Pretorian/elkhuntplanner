@@ -3253,9 +3253,9 @@ export default function ElkHuntDashboard() {
                       {id === 'map' && <MapPanel unit={unit} />}
                       {id === 'gear' && <GearList />}
                       {id === 'integrations' && <IntegrationsPanel />}
-                      {id !== 'integrations' && id !== 'waypoints' && id !== 'gear' && (
-                        <NotesSection unitId={unit.id} />
-                      )}
+                      {id !== 'integrations' &&
+                        id !== 'waypoints' &&
+                        id !== 'gear' && <NotesSection unitId={unit.id} />}
                     </>
                   )}
                 </div>

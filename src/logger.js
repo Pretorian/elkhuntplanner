@@ -33,7 +33,6 @@ class Logger {
    * Log warning message
    */
   warn(message, ...args) {
-    // eslint-disable-next-line no-console
     console.warn(...this.format('WARN', message, ...args));
   }
 
