@@ -24,10 +24,12 @@ import {
   Edit3,
   Save,
   X,
+  Package,
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import './storage'; // Initialize storage
+import GearList from './components/GearList';
 
 // ═══════════════════════════════════════════════════════════════
 // DESIGN TOKENS
@@ -523,6 +525,7 @@ const TABS = [
   { id: 'lodging', label: 'Lodging', Icon: Home },
   { id: 'waypoints', label: 'Waypoints', Icon: MapPin },
   { id: 'map', label: 'Map', Icon: Map },
+  { id: 'gear', label: 'Gear', Icon: Package },
   { id: 'integrations', label: 'Integrations', Icon: Plug },
 ];
 
@@ -3248,8 +3251,9 @@ export default function ElkHuntDashboard() {
                       {id === 'lodging' && <LodgingPanel unit={unit} />}
                       {id === 'waypoints' && <WaypointsPanel unit={unit} />}
                       {id === 'map' && <MapPanel unit={unit} />}
+                      {id === 'gear' && <GearList />}
                       {id === 'integrations' && <IntegrationsPanel />}
-                      {id !== 'integrations' && id !== 'waypoints' && (
+                      {id !== 'integrations' && id !== 'waypoints' && id !== 'gear' && (
                         <NotesSection unitId={unit.id} />
                       )}
                     </>
