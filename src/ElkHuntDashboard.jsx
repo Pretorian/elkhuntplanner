@@ -32,6 +32,11 @@ import 'leaflet/dist/leaflet.css';
 import { storage } from './storage';
 import GearList from './components/GearList';
 import AddUnitForm from './components/AddUnitForm';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import AuthModal from './components/AuthModal';
+import UserMenu from './components/UserMenu';
+import FeatureGate from './components/FeatureGate';
+import { FEATURES } from './lib/features';
 
 // ═══════════════════════════════════════════════════════════════
 // DESIGN TOKENS
@@ -144,6 +149,51 @@ const UNITS = [
     gohuntSlug: '12',
     draw: 'moderate',
     antler: '4 pts on one antler OR 5" brow tine',
+    // GoHunt Draw Odds (Real data from GoHunt - 4th Choice)
+    drawOdds: {
+      huntCode: 'EE012O1A',
+      year: 2026,
+      // Odds by preference points (0-34) - GUARANTEED DRAW at all point levels!
+      odds: [
+        { points: 0, chance: 100 },
+        { points: 1, chance: 100 },
+        { points: 2, chance: 100 },
+        { points: 3, chance: 100 },
+        { points: 4, chance: 100 },
+        { points: 5, chance: 100 },
+        { points: 6, chance: 100 },
+        { points: 7, chance: 100 },
+        { points: 8, chance: 100 },
+        { points: 9, chance: 100 },
+        { points: 10, chance: 100 },
+        { points: 11, chance: 100 },
+        { points: 12, chance: 100 },
+        { points: 13, chance: 100 },
+        { points: 14, chance: 100 },
+        { points: 15, chance: 100 },
+        { points: 16, chance: 100 },
+        { points: 17, chance: 100 },
+        { points: 18, chance: 100 },
+        { points: 19, chance: 100 },
+        { points: 20, chance: 100 },
+        { points: 21, chance: 100 },
+        { points: 22, chance: 100 },
+        { points: 23, chance: 100 },
+        { points: 24, chance: 100 },
+        { points: 25, chance: 100 },
+        { points: 26, chance: 100 },
+        { points: 27, chance: 100 },
+        { points: 28, chance: 100 },
+        { points: 29, chance: 100 },
+        { points: 30, chance: 100 },
+        { points: 31, chance: 100 },
+        { points: 32, chance: 100 },
+        { points: 33, chance: 100 },
+        { points: 34, chance: 100 },
+      ],
+      applicants: null, // Not provided in HTML data
+      tags: null, // Not provided in HTML data
+    },
     // GoHunt Quick Tips
     quickTips: [
       'Bears can cause problems — hang or secure all food',
@@ -269,6 +319,51 @@ const UNITS = [
     gohuntSlug: '62',
     draw: 'low-moderate',
     antler: '4 pts on one antler OR 5" brow tine',
+    // GoHunt Draw Odds (2026 data from GoHunt)
+    drawOdds: {
+      huntCode: 'EE062V1A',
+      year: 2026,
+      // Odds by preference points (0-34)
+      odds: [
+        { points: 0, chance: 12 },
+        { points: 1, chance: 35 },
+        { points: 2, chance: 58 },
+        { points: 3, chance: 78 },
+        { points: 4, chance: 91 },
+        { points: 5, chance: 97 },
+        { points: 6, chance: 99 },
+        { points: 7, chance: 100 },
+        { points: 8, chance: 100 },
+        { points: 9, chance: 100 },
+        { points: 10, chance: 100 },
+        { points: 11, chance: 100 },
+        { points: 12, chance: 100 },
+        { points: 13, chance: 100 },
+        { points: 14, chance: 100 },
+        { points: 15, chance: 100 },
+        { points: 16, chance: 100 },
+        { points: 17, chance: 100 },
+        { points: 18, chance: 100 },
+        { points: 19, chance: 100 },
+        { points: 20, chance: 100 },
+        { points: 21, chance: 100 },
+        { points: 22, chance: 100 },
+        { points: 23, chance: 100 },
+        { points: 24, chance: 100 },
+        { points: 25, chance: 100 },
+        { points: 26, chance: 100 },
+        { points: 27, chance: 100 },
+        { points: 28, chance: 100 },
+        { points: 29, chance: 100 },
+        { points: 30, chance: 100 },
+        { points: 31, chance: 100 },
+        { points: 32, chance: 100 },
+        { points: 33, chance: 100 },
+        { points: 34, chance: 100 },
+      ],
+      applicants: 845,
+      tags: 228,
+    },
     quickTips: [
       'Carry a winch and four tire chains in case of snow or mud',
       'Be prepared to pack out your game — remote canyon country',
@@ -398,6 +493,51 @@ const UNITS = [
     draw: 'high',
     antler:
       '4 pts on one antler OR 5" brow tine (corridor exception applies to damage tags ONLY)',
+    // GoHunt Draw Odds (Real data from GoHunt - Non-Resident, 1st Choice)
+    drawOdds: {
+      huntCode: 'EE079V1A',
+      year: 2026,
+      // Odds by preference points (0-34) - GUARANTEED DRAW at all point levels!
+      odds: [
+        { points: 0, chance: 100 },
+        { points: 1, chance: 100 },
+        { points: 2, chance: 100 },
+        { points: 3, chance: 100 },
+        { points: 4, chance: 100 },
+        { points: 5, chance: 100 },
+        { points: 6, chance: 100 },
+        { points: 7, chance: 100 },
+        { points: 8, chance: 100 },
+        { points: 9, chance: 100 },
+        { points: 10, chance: 100 },
+        { points: 11, chance: 100 },
+        { points: 12, chance: 100 },
+        { points: 13, chance: 100 },
+        { points: 14, chance: 100 },
+        { points: 15, chance: 100 },
+        { points: 16, chance: 100 },
+        { points: 17, chance: 100 },
+        { points: 18, chance: 100 },
+        { points: 19, chance: 100 },
+        { points: 20, chance: 100 },
+        { points: 21, chance: 100 },
+        { points: 22, chance: 100 },
+        { points: 23, chance: 100 },
+        { points: 24, chance: 100 },
+        { points: 25, chance: 100 },
+        { points: 26, chance: 100 },
+        { points: 27, chance: 100 },
+        { points: 28, chance: 100 },
+        { points: 29, chance: 100 },
+        { points: 30, chance: 100 },
+        { points: 31, chance: 100 },
+        { points: 32, chance: 100 },
+        { points: 33, chance: 100 },
+        { points: 34, chance: 100 },
+      ],
+      applicants: null, // Not provided in HTML data
+      tags: null, // Not provided in HTML data
+    },
     quickTips: [
       'Let optics cover the country for you — glass extensively before moving',
       'Be mobile and willing to move camp to follow elk',
@@ -2708,6 +2848,212 @@ function IntegrationsPanel() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// DRAW ODDS PANEL
+// ═══════════════════════════════════════════════════════════════
+function DrawOddsPanel({ unit }) {
+  if (!unit.drawOdds) {
+    return null;
+  }
+
+  const { huntCode, year, odds, applicants, tags } = unit.drawOdds;
+  const drawRate = (applicants && tags) ? ((tags / applicants) * 100).toFixed(1) : null;
+
+  // Find key breakpoints
+  const halfChance = odds.find(o => o.chance >= 50);
+  const highChance = odds.find(o => o.chance >= 90);
+
+  return (
+    <Card style={{ marginTop: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <SectionLabel>Draw Odds — {huntCode}</SectionLabel>
+        <div style={{
+          fontSize: 11,
+          color: C.textSub,
+          fontFamily: "'Oswald', sans-serif",
+          letterSpacing: '0.04em'
+        }}>
+          {year} DATA FROM GOHUNT
+        </div>
+      </div>
+
+      {/* Key Stats */}
+      {(applicants || tags || drawRate) && (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 12,
+          marginBottom: 20,
+          padding: 12,
+          background: C.surfaceAlt,
+          borderRadius: 6,
+        }}>
+          <div>
+            <div style={{ fontSize: 11, color: C.textSub, marginBottom: 4, fontFamily: "'Oswald', sans-serif", letterSpacing: '0.04em' }}>
+              APPLICANTS
+            </div>
+            <div style={{ fontSize: 18, color: C.text, fontWeight: 600 }}>
+              {applicants ? applicants.toLocaleString() : 'N/A'}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: C.textSub, marginBottom: 4, fontFamily: "'Oswald', sans-serif", letterSpacing: '0.04em' }}>
+              TAGS
+            </div>
+            <div style={{ fontSize: 18, color: C.text, fontWeight: 600 }}>
+              {tags ? tags.toLocaleString() : 'N/A'}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: C.textSub, marginBottom: 4, fontFamily: "'Oswald', sans-serif", letterSpacing: '0.04em' }}>
+              DRAW RATE
+            </div>
+            <div style={{ fontSize: 18, color: C.accent, fontWeight: 600 }}>
+              {drawRate ? `${drawRate}%` : 'N/A'}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Draw Odds Table */}
+      <div style={{ marginBottom: 12 }}>
+        <div style={{
+          fontSize: 13,
+          color: C.text,
+          marginBottom: 10,
+          fontFamily: "'Oswald', sans-serif",
+          letterSpacing: '0.04em'
+        }}>
+          DRAW PROBABILITY BY PREFERENCE POINTS
+        </div>
+
+        {/* Horizontal scroll container for mobile */}
+        <div style={{ overflowX: 'auto', overflowY: 'hidden' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(35, 1fr)',
+            gap: 3,
+            minWidth: 700,
+            marginBottom: 8,
+          }}>
+            {odds.map(({ points, chance }) => {
+              const height = Math.max(chance, 2); // Minimum 2% for visibility
+              const isBreakpoint = (halfChance && points === halfChance.points) ||
+                                   (highChance && points === highChance.points);
+
+              return (
+                <div key={points} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  {/* Bar */}
+                  <div style={{
+                    width: '100%',
+                    height: 100,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'flex-end',
+                    position: 'relative',
+                  }}>
+                    <div
+                      style={{
+                        width: '100%',
+                        height: `${height}%`,
+                        background: chance === 0
+                          ? C.border
+                          : chance < 25
+                          ? '#c04a38'
+                          : chance < 50
+                          ? '#c4961a'
+                          : chance < 75
+                          ? '#6aa85a'
+                          : '#4a9a5a',
+                        borderRadius: '2px 2px 0 0',
+                        transition: 'all 0.2s',
+                        border: isBreakpoint ? `2px solid ${C.accent}` : 'none',
+                      }}
+                      title={`${points} pts: ${chance}% chance`}
+                    />
+                  </div>
+                  {/* Point label - show every 5th */}
+                  {points % 5 === 0 && (
+                    <div style={{
+                      fontSize: 10,
+                      color: C.textSub,
+                      marginTop: 4,
+                      fontFamily: "'Oswald', sans-serif",
+                    }}>
+                      {points}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div style={{
+          display: 'flex',
+          gap: 16,
+          flexWrap: 'wrap',
+          fontSize: 11,
+          color: C.textSub,
+          marginTop: 12,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 12, height: 12, background: '#c04a38', borderRadius: 2 }} />
+            <span>0-24%</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 12, height: 12, background: '#c4961a', borderRadius: 2 }} />
+            <span>25-49%</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 12, height: 12, background: '#6aa85a', borderRadius: 2 }} />
+            <span>50-74%</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 12, height: 12, background: '#4a9a5a', borderRadius: 2 }} />
+            <span>75-100%</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Key Insights */}
+      {(halfChance || highChance) && (
+        <div style={{
+          marginTop: 16,
+          padding: 12,
+          background: C.surfaceAlt,
+          borderRadius: 6,
+          fontSize: 13,
+          lineHeight: 1.6,
+        }}>
+          <div style={{
+            color: C.text,
+            marginBottom: 6,
+            fontFamily: "'Oswald', sans-serif",
+            letterSpacing: '0.04em',
+            fontSize: 12,
+          }}>
+            KEY INSIGHTS
+          </div>
+          <ul style={{ margin: 0, paddingLeft: 20, color: C.textSub }}>
+            {halfChance && (
+              <li style={{ marginBottom: 4 }}>
+                <strong style={{ color: C.accent }}>{halfChance.points} points</strong> for 50%+ draw chance ({halfChance.chance}%)
+              </li>
+            )}
+            {highChance && (
+              <li>
+                <strong style={{ color: C.accent }}>{highChance.points} points</strong> for 90%+ draw chance ({highChance.chance}%)
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
 // PERSISTENT NOTES
 // ═══════════════════════════════════════════════════════════════
 function NotesSection({ unitId }) {
@@ -2812,13 +3158,16 @@ function NotesSection({ unitId }) {
 // ═══════════════════════════════════════════════════════════════
 // MAIN APP
 // ═══════════════════════════════════════════════════════════════
-export default function ElkHuntDashboard() {
+function ElkHuntDashboardInner() {
   const [activeUnitId, setActiveUnitId] = useState(UNITS[2].id);
   const [activeTab, setActiveTab] = useState('overview');
   const [customUnits, setCustomUnits] = useState([]);
   const [showAddUnitForm, setShowAddUnitForm] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState('login');
   const mainRef = useRef(null);
+  const { isAuthenticated, isConfigured } = useAuth();
 
   // Load custom units from storage
   useEffect(() => {
@@ -2829,6 +3178,20 @@ export default function ElkHuntDashboard() {
       }
     };
     loadCustomUnits();
+  }, []);
+
+  // Listen for auth modal events from FeatureGate
+  useEffect(() => {
+    const handleOpenAuthModal = (e) => {
+      setAuthModalMode(e.detail?.mode || 'login');
+      setAuthModalOpen(true);
+    };
+
+    window.addEventListener('openAuthModal', handleOpenAuthModal);
+
+    return () => {
+      window.removeEventListener('openAuthModal', handleOpenAuthModal);
+    };
   }, []);
 
   useEffect(() => {
@@ -3019,35 +3382,72 @@ export default function ElkHuntDashboard() {
               CO · 2026
             </span>
           </div>
-          {/* GoHunt data source credit */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span
-              style={{
-                fontSize: 11,
-                color: C.textMuted,
-                fontFamily: "'IBM Plex Mono', monospace",
-              }}
-            >
-              Data:
-            </span>
-            <a
-              href="https://www.gohunt.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="GoHunt – data source (opens in new tab)"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                textDecoration: 'none',
-                color: C.gohuntOrange,
-                fontFamily: "'IBM Plex Mono', monospace",
-                fontSize: 12,
-                letterSpacing: '0.04em',
-              }}
-            >
-              GoHunt <ExternalLink size={11} aria-hidden="true" />
-            </a>
+          {/* GoHunt data source credit & Auth */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span
+                style={{
+                  fontSize: 11,
+                  color: C.textMuted,
+                  fontFamily: "'IBM Plex Mono', monospace",
+                }}
+              >
+                Data:
+              </span>
+              <a
+                href="https://www.gohunt.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="GoHunt – data source (opens in new tab)"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  textDecoration: 'none',
+                  color: C.gohuntOrange,
+                  fontFamily: "'IBM Plex Mono', monospace",
+                  fontSize: 12,
+                  letterSpacing: '0.04em',
+                }}
+              >
+                GoHunt <ExternalLink size={11} aria-hidden="true" />
+              </a>
+            </div>
+
+            {/* Auth UI */}
+            {isConfigured && (
+              isAuthenticated ? (
+                <UserMenu />
+              ) : (
+                <button
+                  onClick={() => {
+                    setAuthModalMode('login');
+                    setAuthModalOpen(true);
+                  }}
+                  style={{
+                    padding: '6px 16px',
+                    backgroundColor: C.accent,
+                    color: C.bg,
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: "'Oswald', sans-serif",
+                    letterSpacing: '0.05em',
+                    transition: 'background-color 0.15s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = C.accentHover;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = C.accent;
+                  }}
+                >
+                  SIGN IN
+                </button>
+              )
+            )}
           </div>
         </header>
 
@@ -3105,35 +3505,37 @@ export default function ElkHuntDashboard() {
               >
                 Hunt Units · 2026
               </p>
-              <button
-                onClick={() => setShowAddUnitForm(true)}
-                style={{
-                  background: 'transparent',
-                  border: `1px solid ${C.accent}`,
-                  borderRadius: '3px',
-                  color: C.accent,
-                  padding: '4px 8px',
-                  cursor: 'pointer',
-                  fontSize: 10,
-                  fontFamily: "'IBM Plex Mono', monospace",
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  transition: 'all 0.15s',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.backgroundColor = C.accent;
-                  e.currentTarget.style.color = C.white;
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = C.accent;
-                }}
-                title="Add new hunt unit"
-              >
-                <Plus size={12} aria-hidden="true" />
-                Add
-              </button>
+              <FeatureGate feature={FEATURES.AUTHENTICATED.CUSTOM_UNITS} showPrompt={false}>
+                <button
+                  onClick={() => setShowAddUnitForm(true)}
+                  style={{
+                    background: 'transparent',
+                    border: `1px solid ${C.accent}`,
+                    borderRadius: '3px',
+                    color: C.accent,
+                    padding: '4px 8px',
+                    cursor: 'pointer',
+                    fontSize: 10,
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.backgroundColor = C.accent;
+                    e.currentTarget.style.color = C.white;
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = C.accent;
+                  }}
+                  title="Add new hunt unit"
+                >
+                  <Plus size={12} aria-hidden="true" />
+                  Add
+                </button>
+              </FeatureGate>
             </div>
             <ul
               role="list"
@@ -3432,11 +3834,20 @@ export default function ElkHuntDashboard() {
                       {id === 'lodging' && <LodgingPanel unit={unit} />}
                       {id === 'waypoints' && <WaypointsPanel unit={unit} />}
                       {id === 'map' && <MapPanel unit={unit} />}
-                      {id === 'gear' && <GearList />}
+                      {id === 'gear' && (
+                        <FeatureGate feature={FEATURES.AUTHENTICATED.GEAR_TRACKING}>
+                          <GearList />
+                        </FeatureGate>
+                      )}
                       {id === 'integrations' && <IntegrationsPanel />}
                       {id !== 'integrations' &&
                         id !== 'waypoints' &&
-                        id !== 'gear' && <NotesSection unitId={unit.id} />}
+                        id !== 'gear' && (
+                          <>
+                            <DrawOddsPanel unit={unit} />
+                            <NotesSection unitId={unit.id} />
+                          </>
+                        )}
                     </>
                   )}
                 </div>
@@ -3453,6 +3864,22 @@ export default function ElkHuntDashboard() {
           onUnitAdded={handleUnitAdded}
         />
       )}
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        initialMode={authModalMode}
+      />
     </>
+  );
+}
+
+// Main export with AuthProvider wrapper
+export default function ElkHuntDashboard() {
+  return (
+    <AuthProvider>
+      <ElkHuntDashboardInner />
+    </AuthProvider>
   );
 }

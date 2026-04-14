@@ -86,9 +86,10 @@ const AddUnitForm = ({ onClose, onUnitAdded }) => {
     }
   };
 
-  const parseGoHuntHTML = html => {
+  const parseGoHuntHTML = _html => {
     // This is a simplified parser - in reality, GoHunt's HTML structure would need
     // to be analyzed and proper selectors used
+    // Note: _html parameter is unused in this placeholder implementation
     const data = {
       quickTips: [],
       terrain: { summary: '', vegetation: [], features: [] },
