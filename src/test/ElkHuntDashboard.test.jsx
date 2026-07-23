@@ -4,8 +4,10 @@ import ElkHuntDashboard from '../ElkHuntDashboard';
 
 describe('ElkHuntDashboard', () => {
   beforeEach(() => {
-    // Clear storage before each test
-    window.storage.data.clear();
+    // Clear storage before each test. Importing the real storage module
+    // (src/storage.js) overwrites the jsdom mock with the singleton instance,
+    // which exposes clear() (not a .data Map), so call clear() directly.
+    window.storage?.clear?.();
   });
 
   it('should render without crashing', () => {
@@ -31,31 +33,22 @@ describe('ElkHuntDashboard', () => {
     });
   });
 
-  it('should render all three GMU units', async () => {
-    render(<ElkHuntDashboard />);
+  it('should offer only GMU 79 as a selectable unit', async () => {
+    const { container } = render(<ElkHuntDashboard />);
 
     await waitFor(() => {
-      // Look for GMU numbers
-      const gmu12 = screen.getAllByText(/GMU 12/i);
-      const gmu62 = screen.getAllByText(/GMU 62/i);
-      const gmu79 = screen.getAllByText(/GMU 79/i);
-
-      expect(gmu12.length).toBeGreaterThan(0);
-      expect(gmu62.length).toBeGreaterThan(0);
-      expect(gmu79.length).toBeGreaterThan(0);
+      // The sidebar unit selector should list exactly one unit: GMU 79.
+      const unitButtons = container.querySelectorAll('.unit-btn');
+      expect(unitButtons.length).toBe(1);
+      expect(unitButtons[0].textContent).toMatch(/GMU 79/i);
     });
   });
 
-  it('should display unit nicknames', async () => {
+  it('should display the unit nickname', async () => {
     render(<ElkHuntDashboard />);
 
     await waitFor(() => {
-      const flatTops = screen.getAllByText(/Flat Tops/i);
-      const uncompahgre = screen.getAllByText(/Uncompahgre/i);
       const sanLuis = screen.getAllByText(/San Luis/i);
-
-      expect(flatTops.length).toBeGreaterThan(0);
-      expect(uncompahgre.length).toBeGreaterThan(0);
       expect(sanLuis.length).toBeGreaterThan(0);
     });
   });
@@ -64,10 +57,11 @@ describe('ElkHuntDashboard', () => {
     render(<ElkHuntDashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText(/overview/i)).toBeInTheDocument();
-      expect(screen.getByText(/waypoints/i)).toBeInTheDocument();
-      expect(screen.getByText(/map/i)).toBeInTheDocument();
-      expect(screen.getByText(/integrations/i)).toBeInTheDocument();
+      // Tab labels render in both the desktop and mobile navs, so match all.
+      expect(screen.getAllByText(/overview/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/waypoints/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/map/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/integrations/i).length).toBeGreaterThan(0);
     });
   });
 });

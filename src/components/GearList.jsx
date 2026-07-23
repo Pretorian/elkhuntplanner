@@ -13,8 +13,47 @@ import {
   ShoppingCart,
   Star,
   Award,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { storage } from '../storage';
+import acquiredManifest from '../../assets/acquired-gear.json';
+
+// Normalize a name/category for manifest matching (trim + lowercase)
+const normKey = s => (s || '').trim().toLowerCase();
+
+// Build a lookup of manifest entries keyed by "name|category"
+const manifestLookup = () => {
+  const map = {};
+  (acquiredManifest || []).forEach(entry => {
+    map[`${normKey(entry.name)}|${normKey(entry.category)}`] = entry;
+  });
+  return map;
+};
+
+// Ensure every item has owned/image fields, seeding missing values from the
+// committed manifest (by name+category). Explicit values already on an item
+// (e.g. a user's saved choice) are always kept — the manifest only fills gaps.
+const applyManifest = data => {
+  const lookup = manifestLookup();
+  const result = {};
+  Object.entries(data).forEach(([category, items]) => {
+    result[category] = items.map(item => {
+      const seed = lookup[`${normKey(item.name)}|${normKey(category)}`];
+      return {
+        ...item,
+        owned:
+          item.owned !== undefined ? item.owned : seed ? !!seed.owned : false,
+        image:
+          item.image != null
+            ? item.image
+            : seed && seed.image
+              ? seed.image
+              : null,
+      };
+    });
+  });
+  return result;
+};
 
 // Design tokens - matching the main app
 const C = {
@@ -268,6 +307,8 @@ const parseGearCSV = csvText => {
           name: item,
           category: header,
           packed: false,
+          // owned/image are seeded from the manifest by applyManifest() on load;
+          // left unset here so manifest values (e.g. owned: true) can apply.
         });
       }
     });
@@ -320,6 +361,8 @@ const GearList = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [editingItem, setEditingItem] = useState(null);
   const [editValue, setEditValue] = useState('');
+  const [editingImageItem, setEditingImageItem] = useState(null);
+  const [imageValue, setImageValue] = useState('');
   const [addingToCategory, setAddingToCategory] = useState(null);
   const [newItemName, setNewItemName] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -331,19 +374,15 @@ const GearList = () => {
   useEffect(() => {
     const loadGearData = async () => {
       const saved = await storage.get('elk-gear-list');
-      if (saved) {
-        setGearData(saved);
-        // Expand all categories by default
-        const expanded = {};
-        Object.keys(saved).forEach(cat => (expanded[cat] = true));
-        setExpandedCategories(expanded);
-      } else {
-        setGearData(initialGearData);
-        // Expand all categories by default
-        const expanded = {};
-        Object.keys(initialGearData).forEach(cat => (expanded[cat] = true));
-        setExpandedCategories(expanded);
-      }
+      // Seed owned/image from the committed manifest, backfilling any items
+      // (including existing users' saved data) that lack the newer fields.
+      const source = saved || initialGearData;
+      const merged = applyManifest(source);
+      setGearData(merged);
+      // Expand all categories by default
+      const expanded = {};
+      Object.keys(merged).forEach(cat => (expanded[cat] = true));
+      setExpandedCategories(expanded);
     };
     loadGearData();
   }, []);
@@ -369,6 +408,16 @@ const GearList = () => {
       ...prev,
       [category]: prev[category].map(item =>
         item.id === itemId ? { ...item, packed: !item.packed } : item
+      ),
+    }));
+  };
+
+  // Toggle item owned (acquired) status
+  const toggleOwned = (category, itemId) => {
+    setGearData(prev => ({
+      ...prev,
+      [category]: prev[category].map(item =>
+        item.id === itemId ? { ...item, owned: !item.owned } : item
       ),
     }));
   };
@@ -407,6 +456,31 @@ const GearList = () => {
     setEditValue('');
   };
 
+  // Start editing an item's image URL
+  const startImageEdit = item => {
+    setEditingImageItem(item.id);
+    setImageValue(item.image || '');
+  };
+
+  // Save (or clear) an item's image URL
+  const saveImage = (category, itemId) => {
+    const url = imageValue.trim();
+    setGearData(prev => ({
+      ...prev,
+      [category]: prev[category].map(item =>
+        item.id === itemId ? { ...item, image: url || null } : item
+      ),
+    }));
+    setEditingImageItem(null);
+    setImageValue('');
+  };
+
+  // Cancel image editing
+  const cancelImageEdit = () => {
+    setEditingImageItem(null);
+    setImageValue('');
+  };
+
   // Add new item to category
   const addItem = category => {
     if (newItemName.trim()) {
@@ -415,6 +489,8 @@ const GearList = () => {
         name: newItemName.trim(),
         category,
         packed: false,
+        owned: false,
+        image: null,
       };
       setGearData(prev => ({
         ...prev,
@@ -438,6 +514,8 @@ const GearList = () => {
       name: item.name,
       category,
       packed: false,
+      owned: false,
+      image: null,
     };
     setGearData(prev => ({
       ...prev,
@@ -487,14 +565,18 @@ const GearList = () => {
   const packingStats = useMemo(() => {
     let total = 0;
     let packed = 0;
+    let owned = 0;
     Object.values(gearData).forEach(categoryItems => {
       total += categoryItems.length;
       packed += categoryItems.filter(item => item.packed).length;
+      owned += categoryItems.filter(item => item.owned).length;
     });
     return {
       total,
       packed,
+      owned,
       percentage: total > 0 ? Math.round((packed / total) * 100) : 0,
+      ownedPercentage: total > 0 ? Math.round((owned / total) * 100) : 0,
     };
   }, [gearData]);
 
@@ -555,6 +637,43 @@ const GearList = () => {
                 width: `${packingStats.percentage}%`,
                 height: '100%',
                 backgroundColor: C.green,
+                transition: 'width 0.3s ease',
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Owned (Acquired) Progress Bar */}
+        <div style={{ marginBottom: '16px' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginBottom: '4px',
+              fontSize: '14px',
+              color: C.textSub,
+            }}
+          >
+            <span>Gear Acquired</span>
+            <span>
+              {packingStats.owned} / {packingStats.total} (
+              {packingStats.ownedPercentage}%)
+            </span>
+          </div>
+          <div
+            style={{
+              width: '100%',
+              height: '8px',
+              backgroundColor: C.card,
+              borderRadius: '4px',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                width: `${packingStats.ownedPercentage}%`,
+                height: '100%',
+                backgroundColor: C.accent,
                 transition: 'width 0.3s ease',
               }}
             />
@@ -1215,8 +1334,8 @@ const GearList = () => {
                         marginBottom: '4px',
                         borderRadius: '4px',
                         display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
+                        flexDirection: 'column',
+                        gap: '6px',
                         backgroundColor: item.packed
                           ? C.surface
                           : 'transparent',
@@ -1231,134 +1350,304 @@ const GearList = () => {
                           e.currentTarget.style.backgroundColor = 'transparent';
                       }}
                     >
-                      {/* Checkbox */}
-                      <input
-                        type="checkbox"
-                        checked={item.packed}
-                        onChange={() => togglePacked(category, item.id)}
+                      <div
                         style={{
-                          width: '18px',
-                          height: '18px',
-                          cursor: 'pointer',
-                          accentColor: C.green,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
                         }}
-                      />
-
-                      {/* Item Name or Edit Input */}
-                      {editingItem === item.id ? (
+                      >
+                        {/* Packed checkbox */}
                         <input
-                          type="text"
-                          value={editValue}
-                          onChange={e => setEditValue(e.target.value)}
-                          onKeyPress={e => {
-                            if (e.key === 'Enter') saveEdit(category, item.id);
-                            if (e.key === 'Escape') cancelEdit();
-                          }}
-                          autoFocus
+                          type="checkbox"
+                          title="Packed"
+                          checked={item.packed}
+                          onChange={() => togglePacked(category, item.id)}
                           style={{
-                            flex: 1,
-                            padding: '4px 8px',
-                            backgroundColor: C.card,
-                            border: `1px solid ${C.accent}`,
-                            borderRadius: '4px',
-                            color: C.text,
-                            fontSize: '14px',
-                            outline: 'none',
+                            width: '18px',
+                            height: '18px',
+                            cursor: 'pointer',
+                            accentColor: C.green,
                           }}
                         />
-                      ) : (
-                        <span
+
+                        {/* Thumbnail / image placeholder */}
+                        <button
+                          onClick={() => startImageEdit(item)}
+                          title={item.image ? 'Change picture' : 'Add picture'}
                           style={{
-                            flex: 1,
-                            fontSize: '14px',
-                            color: item.packed ? C.textMuted : C.text,
-                            textDecoration: item.packed
-                              ? 'line-through'
-                              : 'none',
+                            width: '36px',
+                            height: '36px',
+                            flexShrink: 0,
+                            padding: 0,
+                            borderRadius: '6px',
+                            border: `1px solid ${C.border}`,
+                            background: C.surface,
+                            cursor: 'pointer',
+                            overflow: 'hidden',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: C.textMuted,
                           }}
                         >
-                          {item.name}
-                        </span>
-                      )}
+                          {item.image ? (
+                            <img
+                              src={item.image}
+                              alt={item.name}
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                              }}
+                              onError={e => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <ImageIcon size={16} />
+                          )}
+                        </button>
 
-                      {/* Action Buttons */}
-                      <div style={{ display: 'flex', gap: '4px' }}>
+                        {/* Item Name or Edit Input */}
                         {editingItem === item.id ? (
-                          <>
-                            <button
-                              onClick={() => saveEdit(category, item.id)}
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                cursor: 'pointer',
-                                padding: '4px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                color: C.green,
-                              }}
-                            >
-                              <Check size={16} />
-                            </button>
-                            <button
-                              onClick={cancelEdit}
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                cursor: 'pointer',
-                                padding: '4px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                color: C.red,
-                              }}
-                            >
-                              <X size={16} />
-                            </button>
-                          </>
+                          <input
+                            type="text"
+                            value={editValue}
+                            onChange={e => setEditValue(e.target.value)}
+                            onKeyPress={e => {
+                              if (e.key === 'Enter')
+                                saveEdit(category, item.id);
+                              if (e.key === 'Escape') cancelEdit();
+                            }}
+                            autoFocus
+                            style={{
+                              flex: 1,
+                              padding: '4px 8px',
+                              backgroundColor: C.card,
+                              border: `1px solid ${C.accent}`,
+                              borderRadius: '4px',
+                              color: C.text,
+                              fontSize: '14px',
+                              outline: 'none',
+                            }}
+                          />
                         ) : (
-                          <>
-                            <button
-                              onClick={() => startEdit(item)}
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                cursor: 'pointer',
-                                padding: '4px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                color: C.textMuted,
-                              }}
-                              onMouseEnter={e =>
-                                (e.currentTarget.style.color = C.accent)
-                              }
-                              onMouseLeave={e =>
-                                (e.currentTarget.style.color = C.textMuted)
-                              }
-                            >
-                              <Edit3 size={14} />
-                            </button>
-                            <button
-                              onClick={() => deleteItem(category, item.id)}
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                cursor: 'pointer',
-                                padding: '4px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                color: C.textMuted,
-                              }}
-                              onMouseEnter={e =>
-                                (e.currentTarget.style.color = C.red)
-                              }
-                              onMouseLeave={e =>
-                                (e.currentTarget.style.color = C.textMuted)
-                              }
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </>
+                          <span
+                            style={{
+                              flex: 1,
+                              fontSize: '14px',
+                              color: item.packed ? C.textMuted : C.text,
+                              textDecoration: item.packed
+                                ? 'line-through'
+                                : 'none',
+                            }}
+                          >
+                            {item.name}
+                          </span>
                         )}
+
+                        {/* Owned (acquired) checkbox */}
+                        <label
+                          title="I already own this"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            flexShrink: 0,
+                            fontSize: '11px',
+                            fontFamily: "'IBM Plex Mono', monospace",
+                            letterSpacing: '0.05em',
+                            textTransform: 'uppercase',
+                            color: item.owned ? C.accentHover : C.textMuted,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={!!item.owned}
+                            onChange={() => toggleOwned(category, item.id)}
+                            style={{
+                              width: '16px',
+                              height: '16px',
+                              cursor: 'pointer',
+                              accentColor: C.accent,
+                            }}
+                          />
+                          Owned
+                        </label>
+
+                        {/* Action Buttons */}
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          {editingItem === item.id ? (
+                            <>
+                              <button
+                                onClick={() => saveEdit(category, item.id)}
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  padding: '4px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  color: C.green,
+                                }}
+                              >
+                                <Check size={16} />
+                              </button>
+                              <button
+                                onClick={cancelEdit}
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  padding: '4px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  color: C.red,
+                                }}
+                              >
+                                <X size={16} />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => startEdit(item)}
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  padding: '4px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  color: C.textMuted,
+                                }}
+                                onMouseEnter={e =>
+                                  (e.currentTarget.style.color = C.accent)
+                                }
+                                onMouseLeave={e =>
+                                  (e.currentTarget.style.color = C.textMuted)
+                                }
+                              >
+                                <Edit3 size={14} />
+                              </button>
+                              <button
+                                onClick={() => startImageEdit(item)}
+                                title={
+                                  item.image
+                                    ? 'Edit picture URL'
+                                    : 'Add picture URL'
+                                }
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  padding: '4px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  color: item.image ? C.accent : C.textMuted,
+                                }}
+                                onMouseEnter={e =>
+                                  (e.currentTarget.style.color = C.accent)
+                                }
+                                onMouseLeave={e =>
+                                  (e.currentTarget.style.color = item.image
+                                    ? C.accent
+                                    : C.textMuted)
+                                }
+                              >
+                                <ImageIcon size={14} />
+                              </button>
+                              <button
+                                onClick={() => deleteItem(category, item.id)}
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  padding: '4px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  color: C.textMuted,
+                                }}
+                                onMouseEnter={e =>
+                                  (e.currentTarget.style.color = C.red)
+                                }
+                                onMouseLeave={e =>
+                                  (e.currentTarget.style.color = C.textMuted)
+                                }
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
+
+                      {/* Inline image URL editor */}
+                      {editingImageItem === item.id && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            paddingLeft: '26px',
+                          }}
+                        >
+                          <input
+                            type="text"
+                            value={imageValue}
+                            onChange={e => setImageValue(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter')
+                                saveImage(category, item.id);
+                              if (e.key === 'Escape') cancelImageEdit();
+                            }}
+                            autoFocus
+                            placeholder="Paste image URL (leave blank to remove)"
+                            style={{
+                              flex: 1,
+                              padding: '4px 8px',
+                              backgroundColor: C.card,
+                              border: `1px solid ${C.accent}`,
+                              borderRadius: '4px',
+                              color: C.text,
+                              fontSize: '13px',
+                              outline: 'none',
+                            }}
+                          />
+                          <button
+                            onClick={() => saveImage(category, item.id)}
+                            title="Save picture"
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              cursor: 'pointer',
+                              padding: '4px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              color: C.green,
+                            }}
+                          >
+                            <Check size={16} />
+                          </button>
+                          <button
+                            onClick={cancelImageEdit}
+                            title="Cancel"
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              cursor: 'pointer',
+                              padding: '4px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              color: C.red,
+                            }}
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
 

@@ -42,6 +42,7 @@ export default [
         confirm: 'readonly',
         alert: 'readonly',
         globalThis: 'readonly',
+        Blob: 'readonly',
       },
     },
     settings: {

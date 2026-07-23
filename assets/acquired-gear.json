@@ -1,0 +1,722 @@
+[
+  {
+    "name": "Treking Poles",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Sit Pad",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Bino Harness",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Pill Bag",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Jet Boil Stove and Fuel",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Water Filtration Solution",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Possibles Pouch",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Bow & Arrows",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Water and bladder / water bottle",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Head Lamp",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Power Bank and cords",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Tripod",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "License Bag",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "1L soft bottle",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "wind proof matches",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Kill Kit",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Bugle Tube",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Possibles Pouch",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "First Aid",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Overnight",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Sunscreen / Balm",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Chapstick",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Fixed Blade Knife",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "\"Battery Bank USB-C USB-Mini\"",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Spork",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Tent Small + Foot print",
+    "category": "Pack / In the field",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Binos",
+    "category": "Bino Harness",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Bear Spray",
+    "category": "Bino Harness",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Game Calls",
+    "category": "Bino Harness",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Extra Batt: Range Finder (2024)",
+    "category": "Bino Harness",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Extra Batt: Headlamp (2025)",
+    "category": "Bino Harness",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Range Finder",
+    "category": "Bino Harness",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Multi-tool / knife (Gerber Dime)",
+    "category": "Bino Harness",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Ferro Rod",
+    "category": "Bino Harness",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Wind Detector",
+    "category": "Bino Harness",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "In Reach Garmin GPS",
+    "category": "Bino Harness",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Allen Key set",
+    "category": "Bino Harness",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Lens wipe",
+    "category": "Bino Harness",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Small Lighter",
+    "category": "Bino Harness",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Fire Starter",
+    "category": "Bino Harness",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "UL Backup headlamp",
+    "category": "Bino Harness",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "water pills",
+    "category": "Bino Harness",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "apex pant",
+    "category": "Clothes",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "ascent pant",
+    "category": "Clothes",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Socks",
+    "category": "Clothes",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Underwear",
+    "category": "Clothes",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Puffy jacket",
+    "category": "Clothes",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "wind breaker jacket",
+    "category": "Clothes",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Fleece jacket",
+    "category": "Clothes",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "base layer X3",
+    "category": "Clothes",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Boots",
+    "category": "Clothes",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "hat",
+    "category": "Clothes",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "face paint",
+    "category": "Clothes",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Gloves x2",
+    "category": "Clothes",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "belt",
+    "category": "Clothes",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "crocs",
+    "category": "Clothes",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "street clothes 2-3 days",
+    "category": "Clothes",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "ibuprofen",
+    "category": "Pill Bag",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "acetaminophen",
+    "category": "Pill Bag",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "contacts",
+    "category": "Pill Bag",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "water tablets / Purification",
+    "category": "Pill Bag",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Anti-diaretic",
+    "category": "Pill Bag",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "stool softener",
+    "category": "Pill Bag",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Tums",
+    "category": "Pill Bag",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Eye drops",
+    "category": "Pill Bag",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Naproxin",
+    "category": "Pill Bag",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Diphenhydramine",
+    "category": "Pill Bag",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Adventure UL Med Kit 7  minus pills",
+    "category": "First Aid",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "wrap for sprains and breaks",
+    "category": "First Aid",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Tourniquet",
+    "category": "First Aid",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Quick Clot",
+    "category": "First Aid",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Overnight",
+    "category": "First Aid",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Tooth paste and Brush",
+    "category": "First Aid",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Floss",
+    "category": "First Aid",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Contacts",
+    "category": "First Aid",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Q-tips",
+    "category": "First Aid",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Breathing Nose Strips",
+    "category": "First Aid",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Luko Tape",
+    "category": "First Aid",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Nail Clippers",
+    "category": "First Aid",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Knife",
+    "category": "Kill Kit",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "saw",
+    "category": "Kill Kit",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "gloves",
+    "category": "Kill Kit",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "bags",
+    "category": "Kill Kit",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Game Bags",
+    "category": "Kill Kit",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Elk tags",
+    "category": "License Bag",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Small Game License",
+    "category": "License Bag",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Copy of Hunter Safety",
+    "category": "License Bag",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Sharpie",
+    "category": "License Bag",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "License's",
+    "category": "License Bag",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "pen",
+    "category": "License Bag",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "zip tie",
+    "category": "License Bag",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Lighter with duct tape",
+    "category": "Possibles Pouch",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Aqua Tabs",
+    "category": "Possibles Pouch",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Signal Mirror",
+    "category": "Possibles Pouch",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Paracord",
+    "category": "Possibles Pouch",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Tick Remover",
+    "category": "Possibles Pouch",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Backup Release",
+    "category": "Possibles Pouch",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Trauma blanket",
+    "category": "Possibles Pouch",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Knife",
+    "category": "Possibles Pouch",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Signal Flag",
+    "category": "Possibles Pouch",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Archery / Tent repair kit.",
+    "category": "Possibles Pouch",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Fire starter",
+    "category": "Possibles Pouch",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "\"Coffee & supplies (filters",
+    "category": "Food & Drink",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Supplements",
+    "category": "Food & Drink",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Caffine solution / Coffee",
+    "category": "Food & Drink",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Daily Sups",
+    "category": "Food & Drink",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Items Packed Day Before",
+    "category": "Food & Drink",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Pistol",
+    "category": "Food & Drink",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Sunglasses",
+    "category": "Food & Drink",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "homemade snacks",
+    "category": "Food & Drink",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "toothpaste and toothbrush",
+    "category": "Food & Drink",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "pour over)\"",
+    "category": "Camp",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Band-Aids",
+    "category": "Camp",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Anti-bactirial oinment",
+    "category": "Camp",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Mole Skin",
+    "category": "Camp",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Anti-itch Cream",
+    "category": "Camp",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "tooth care",
+    "category": "Camp",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Shampoo (dandruff)",
+    "category": "Camp",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Lacrosse Ball",
+    "category": "Camp",
+    "owned": false,
+    "image": ""
+  },
+  {
+    "name": "Q-tips",
+    "category": "Camp",
+    "owned": false,
+    "image": ""
+  }
+]

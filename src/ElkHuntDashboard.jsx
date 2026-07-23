@@ -26,6 +26,8 @@ import {
   X,
   Package,
   Menu,
+  Download,
+  Eye,
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -131,349 +133,6 @@ const INTEGRATIONS = {
 // ═══════════════════════════════════════════════════════════════
 const UNITS = [
   {
-    id: 'GMU-12',
-    displayName: 'GMU 12',
-    nickname: 'Flat Tops',
-    huntCode: 'EE012O1A',
-    choiceRank: 4,
-    choiceLabel: '4th Choice',
-    appLabel: 'E/S Limited Archery',
-    counties: ['Routt', 'Rio Blanco', 'Moffat'],
-    state: 'CO',
-    forest: 'White River & Routt National Forests',
-    // GoHunt At a Glance
-    sqMiles: 675,
-    publicPct: 52.8,
-    elevation: [6239, 12000],
-    coords: { lat: 40.15, lng: -107.5, zoom: 9 },
-    gohuntSlug: '12',
-    draw: 'moderate',
-    antler: '4 pts on one antler OR 5" brow tine',
-    // GoHunt Draw Odds (Real data from GoHunt - 4th Choice)
-    drawOdds: {
-      huntCode: 'EE012O1A',
-      year: 2026,
-      // Odds by preference points (0-34) - GUARANTEED DRAW at all point levels!
-      odds: [
-        { points: 0, chance: 100 },
-        { points: 1, chance: 100 },
-        { points: 2, chance: 100 },
-        { points: 3, chance: 100 },
-        { points: 4, chance: 100 },
-        { points: 5, chance: 100 },
-        { points: 6, chance: 100 },
-        { points: 7, chance: 100 },
-        { points: 8, chance: 100 },
-        { points: 9, chance: 100 },
-        { points: 10, chance: 100 },
-        { points: 11, chance: 100 },
-        { points: 12, chance: 100 },
-        { points: 13, chance: 100 },
-        { points: 14, chance: 100 },
-        { points: 15, chance: 100 },
-        { points: 16, chance: 100 },
-        { points: 17, chance: 100 },
-        { points: 18, chance: 100 },
-        { points: 19, chance: 100 },
-        { points: 20, chance: 100 },
-        { points: 21, chance: 100 },
-        { points: 22, chance: 100 },
-        { points: 23, chance: 100 },
-        { points: 24, chance: 100 },
-        { points: 25, chance: 100 },
-        { points: 26, chance: 100 },
-        { points: 27, chance: 100 },
-        { points: 28, chance: 100 },
-        { points: 29, chance: 100 },
-        { points: 30, chance: 100 },
-        { points: 31, chance: 100 },
-        { points: 32, chance: 100 },
-        { points: 33, chance: 100 },
-        { points: 34, chance: 100 },
-      ],
-      applicants: null, // Not provided in HTML data
-      tags: null, // Not provided in HTML data
-    },
-    // GoHunt Quick Tips
-    quickTips: [
-      'Bears can cause problems — hang or secure all food',
-      'Expect rapid weather changes — layers and rain gear mandatory',
-      'Good trout fishing in rivers, creeks, and many lakes',
-      'No vehicles allowed in Monument Butte or Flat Tops Wilderness',
-      '4WD with tire chains recommended on primitive roads',
-      'ATVs recommended — heavy ATV traffic on the west portion',
-    ],
-    highlights: [
-      'More elk harvested here than any other unit in Colorado',
-      '675 sq mi · 52.8% public land · elevations 6,239–12,000 ft',
-      'Flat Tops Wilderness: ~20,000 acres in SE corner (foot/horse only)',
-      'Most realistic draw prospect on your 2026 application',
-    ],
-    // GoHunt narrative
-    terrain: {
-      summary:
-        'Topography varies from mostly private river bottoms and mild foothills in the north to forested canyons and flattened ridges in the White River and Routt National Forests, to moderately steep mountains that reach slightly above timberline. Many meadows are scattered throughout the mountains and foothills. Private ranches between Hamilton and Pagoda are along a broad river bottom and slowly rising foothills with many benches and gulches. Part of Axial Basin with many gulches and dry washes draining steep ridges is in the west. Roughly 20,000 acres of the Flat Tops Wilderness, which is flat enough to support many small lakes, are in the southeast corner.',
-      vegetation: [
-        'Cottonwoods and willows along rivers and creek bottoms',
-        'NW corner: hay meadows, sagebrush, bitterbrush, oak brush, pinyon, juniper',
-        'Above 8,000 ft: bunchgrass, needle grass, wheatgrass, oak brush, mountain mahogany',
-        'Aspen groves and lodgepole pine, spruce, and fir forests at elevation',
-        'High basins: spruce strands, grasses, columbine, Indian paintbrush, lupine',
-      ],
-      features: [
-        'Flat Tops Wilderness — peaks to 12,000 ft, small alpine lakes, no motors',
-        'Morapos Creek watershed — 8,000–10,000 ft, productive public land',
-        'Axial Basin — western edge, gulches and dry washes off steep ridges',
-        'Williams Fork River corridor',
-      ],
-      slope:
-        'Moderately steep across public land. Plateau top flattens above timberline. Private valley bottoms rise into steep canyon walls in major drainages.',
-    },
-    access: {
-      summary:
-        'The large unit is comprised of an even mixture of public and private lands. During earlier seasons hunters find good opportunities at higher elevations. As snow arrives for later seasons and game is pushed to lower elevations, access issues arise as many low areas are private land.',
-      publicAreas: [
-        'Jensen State Wildlife Area — 5,955 acres',
-        'Indian Run State Wildlife Area — 2,039 acres',
-        'Morapos Creek State Trust — 640 acres',
-        'Monument Butte State Trust — 653 acres (no motorized access)',
-        'Iles Grove State Trust — 2,079 acres',
-        'Flat Tops Wilderness — ~20,000 acres, foot/horse only',
-      ],
-      routes: [
-        'Rio Blanco County Rd 8 → White River NF / Morapos trailheads',
-        'Routt County roads → eastern NF access',
-        'US-13 N from Meeker → primary unit entry',
-        'US-40 W from Craig → northwest access',
-        'USFS Road 16 → Vaughn Lake Campground area',
-      ],
-      notes: [
-        'Heavy ATV traffic on west portion — hike deeper for less competition',
-        'Mostly private land in north half — use onX for boundary verification',
-        'Remote wilderness in the southeast — least pressure, highest reward',
-        'Roads above 8,000 ft can become impassable by late October',
-        'Hunters 3–4+ miles from trailheads see significantly less competition',
-      ],
-    },
-    directions: {
-      fly: {
-        airport: 'Denver International (DEN)',
-        driveTime: '3.5–4 hrs',
-        route:
-          'DEN → I-70 W to Rifle (Exit 90) → US-13 N to Meeker (52 mi). Continue US-40 W to Craig (30 mi) or stay in Meeker.',
-      },
-      drive: {
-        distance: '~1,850 mi',
-        time: '~26 hrs',
-        route:
-          'I-40 W → I-25 N (Albuquerque) → US-550 N → US-50 W → I-70 W → US-40 W to Craig',
-      },
-    },
-    // GoHunt lodging data
-    lodging: {
-      hubs: [
-        {
-          name: 'Craig, CO',
-          badge: 'Primary',
-          note: "'Elk Hunting Capital of the World.' Full services: motels, restaurants, meat processors, fuel.",
-          dist: '0–30 min',
-        },
-        {
-          name: 'Meeker, CO',
-          badge: 'Secondary',
-          note: '20 mi south of Craig. Central to GMUs 12, 23, and 24. Motel-style lodging.',
-          dist: '15–45 min',
-        },
-      ],
-      campgrounds: [
-        'Vaughn Lake Campground (USFS Rd 16) — open early June through October, weather permitting',
-        'Dispersed camping allowed almost anywhere on federal land',
-        'Designated areas in Indian Run and Jensen State Wildlife Areas',
-      ],
-      options: [
-        'The Elk Ranch — private lodge cabin between Craig and Meeker on GMU 12 private land',
-        'Wild Skies Cabins — unguided cabin lodging in Routt NF, Flat Tops, up to 12 hunters',
-        'Yellow Jacket Ranch (Horn & Fin Outfitters) — 10,000-acre ranch, meals and lodging',
-        'Multiple outfitter drop camps throughout Routt and White River NF',
-        'Craig motels — closest option for modern lodging outside the unit',
-      ],
-    },
-  },
-
-  {
-    id: 'GMU-62',
-    displayName: 'GMU 62',
-    nickname: 'Uncompahgre Plateau',
-    huntCode: 'EE062V1A',
-    choiceRank: 3,
-    choiceLabel: '3rd Choice',
-    appLabel: 'E/S Non-Resident Only',
-    counties: ['Delta', 'Mesa', 'Montrose', 'Ouray'],
-    state: 'CO',
-    forest: 'Uncompahgre National Forest / BLM',
-    // GoHunt At a Glance
-    sqMiles: 1376,
-    publicPct: 69.5,
-    elevation: [4500, 10300],
-    coords: { lat: 38.65, lng: -108.2, zoom: 9 },
-    gohuntSlug: '62',
-    draw: 'low-moderate',
-    antler: '4 pts on one antler OR 5" brow tine',
-    // GoHunt Draw Odds (2026 data from GoHunt)
-    drawOdds: {
-      huntCode: 'EE062V1A',
-      year: 2026,
-      // Odds by preference points (0-34)
-      odds: [
-        { points: 0, chance: 12 },
-        { points: 1, chance: 35 },
-        { points: 2, chance: 58 },
-        { points: 3, chance: 78 },
-        { points: 4, chance: 91 },
-        { points: 5, chance: 97 },
-        { points: 6, chance: 99 },
-        { points: 7, chance: 100 },
-        { points: 8, chance: 100 },
-        { points: 9, chance: 100 },
-        { points: 10, chance: 100 },
-        { points: 11, chance: 100 },
-        { points: 12, chance: 100 },
-        { points: 13, chance: 100 },
-        { points: 14, chance: 100 },
-        { points: 15, chance: 100 },
-        { points: 16, chance: 100 },
-        { points: 17, chance: 100 },
-        { points: 18, chance: 100 },
-        { points: 19, chance: 100 },
-        { points: 20, chance: 100 },
-        { points: 21, chance: 100 },
-        { points: 22, chance: 100 },
-        { points: 23, chance: 100 },
-        { points: 24, chance: 100 },
-        { points: 25, chance: 100 },
-        { points: 26, chance: 100 },
-        { points: 27, chance: 100 },
-        { points: 28, chance: 100 },
-        { points: 29, chance: 100 },
-        { points: 30, chance: 100 },
-        { points: 31, chance: 100 },
-        { points: 32, chance: 100 },
-        { points: 33, chance: 100 },
-        { points: 34, chance: 100 },
-      ],
-      applicants: 845,
-      tags: 228,
-    },
-    quickTips: [
-      'Carry a winch and four tire chains in case of snow or mud',
-      'Be prepared to pack out your game — remote canyon country',
-      'Hike in the dark to likely hunting spots to be in place at first light',
-      'Expect to see bears in September — secure all food and camp',
-      'Some rangers are strict enforcing campground rules',
-      'Snowstorms in October and November can strand hunters',
-    ],
-    highlights: [
-      'Shares the Uncompahgre Plateau with Trophy Unit 61',
-      '1,376 sq mi · 69.5% public land · 4,500–10,300 ft elevation',
-      'Fly direct into Montrose Regional Airport (MTJ) — 30–60 min to the plateau',
-      'Rut begins as early as first week of September',
-    ],
-    terrain: {
-      summary:
-        "This unit draws a great deal of attention because it shares the Uncompahgre Plateau with Unit 61, which is famous for producing high success rates on big mule deer and elk. Though Unit 62 doesn't produce nearly as many big bulls and bucks as 61, it offers healthy numbers and tags are much easier to get. The Uncompahgre Plateau is a flat-top mountain range ranging mostly between 8,300 and 9,200 feet, stretching about 90 miles northwest to southeast. The plateau drops into huge canyons, some of them ruggedly steep, overlooking lowlands from 4,500–5,500 feet in elevation. The highest point is 10,300-foot Horsefly Peak.",
-      vegetation: [
-        'Low elevations: sagebrush, croplands, pastures, willows, and cottonwoods',
-        'Middle elevations: pinyon-juniper forest, sage openings, dense oakbrush, cliffrose, bitterbrush',
-        'High elevations: grassy parks surrounded by fir, spruce, and broad aspen forests',
-        'Some aspen forests several miles wide where the plateau stretches west to east',
-        'Occasional firs and aspen patches mixed into oakbrush at mid-elevation',
-      ],
-      features: [
-        'Horsefly Peak — 10,300 ft high point',
-        'Divide Road (USFS Rd 402) — north-south spine, splits GMU 62 (NE) from GMU 61 (SW)',
-        'Plateau top — 8,300–9,200 ft, good road access across the top',
-        'Canyon lowlands — 4,500–5,500 ft, ruggedly steep, private land blocks canyon access from below',
-        'Rubideau Creek and Potter Canyon drainages',
-      ],
-      slope:
-        'Very steep canyon walls flanking the plateau. 80% of public land has slopes ≤27°. Plateau top is relatively forgiving; canyon descents are serious undertakings.',
-    },
-    access: {
-      summary:
-        'Good public road access across the plateau top. Much public road access available, with a lot of ATV trails — though no off-road riding is allowed. Private lands block access to many canyons from below. Some roads become impassable with mud or snow. Snowstorms in October and November can strand hunters.',
-      publicAreas: [
-        'Uncompahgre National Forest — majority of plateau',
-        'BLM dispersed land below the mesa (late-season camping)',
-        'Iron Springs Campground (closes October)',
-        'Divide Forks Campground (closes November)',
-      ],
-      routes: [
-        'Divide Road (USFS Rd 402) — south end: ~15 mi west of Ridgway · north end: ~5 mi SE of Grand Junction',
-        'Mesa 25 Road W from Delta → main northern plateau access',
-        'Hwy 90 from Montrose → southern plateau entry',
-        'Hwy 62 from Ouray/Ridgway → southeastern access',
-      ],
-      notes: [
-        'Early season: camp along primitive roads on the plateau top',
-        'Late season: camp on BLM land below the mesa as elk descend',
-        'Private lands block canyon access from below — enter from plateau top',
-        'Horses strongly recommended for canyon hunting — pack-out is serious',
-        'ATV trails available but off-road riding not permitted',
-        'Verify eastern canyon access boundaries with onX before committing',
-      ],
-    },
-    directions: {
-      fly: {
-        airport: 'Montrose Regional (MTJ)',
-        driveTime: '30–60 min',
-        route:
-          'MTJ → US-50 W through Delta → Hwy 90 W onto plateau, or north via Hwy 141. Direct flights from PHX, DEN, and DAL.',
-        note: 'Best fly-in option of your three units.',
-      },
-      drive: {
-        distance: '~1,700 mi',
-        time: '~24 hrs',
-        route:
-          'I-40 W → I-25 N (Albuquerque) → US-550 N through Durango and Ouray → US-50 E to Montrose',
-      },
-    },
-    lodging: {
-      hubs: [
-        {
-          name: 'Montrose, CO',
-          badge: 'Primary',
-          note: 'Direct airport (MTJ). Full services. 30–60 min to plateau hunting areas.',
-          dist: '30–60 min',
-        },
-        {
-          name: 'Delta, CO',
-          badge: 'Secondary',
-          note: 'Closer to northern plateau access via Mesa 25 Road. Basic services.',
-          dist: '20–40 min',
-        },
-        {
-          name: 'Grand Junction, CO',
-          badge: 'Overflow',
-          note: 'Largest regional city, 60 mi north. More lodging but further from unit.',
-          dist: '60–80 min',
-        },
-      ],
-      campgrounds: [
-        'Iron Springs Campground (USFS) — closes in October',
-        'Divide Forks Campground (USFS) — closes in November',
-        'Dispersed primitive camping on plateau roads (early season)',
-        'BLM dispersed camping below the mesa (late season — free)',
-      ],
-      options: [
-        'Western Colorado Outfitters base camp — guided/semi-guided, GMU 62 USFS permit area',
-        'Dark Timber Lodge — fully outfitted hunts in Units 61 and 62, meals and lodging',
-        'Various motels in Montrose and Delta for town-based base camping',
-        'Grand Junction for larger hotel selection with longer daily commute',
-      ],
-    },
-  },
-
-  {
     id: 'GMU-79',
     displayName: 'GMU 79',
     nickname: 'San Luis Valley',
@@ -537,6 +196,49 @@ const UNITS = [
       ],
       applicants: null, // Not provided in HTML data
       tags: null, // Not provided in HTML data
+    },
+    // Hunt Plan — synthesized from CPW Hunting Atlas elk range layers
+    huntPlan: {
+      hunt: 'Late-season rifle (E/S Non-Resident) — early-mid November',
+      rangePhase:
+        'Migration → Winter Range. Snow in the La Garita Wilderness pushes elk east/SE off the high country down major creek drainages toward foothills above the San Luis Valley floor.',
+      priorityLayers: [
+        'Elk Migration Corridors',
+        'Elk Winter Concentration Area',
+        'Elk Winter Range',
+      ],
+      zones: [
+        {
+          rank: 1,
+          name: 'La Garita Creek drainage (upper / mid)',
+          layers: ['Elk Migration Corridors'],
+          why: 'Primary migration funnel out of the La Garita Wilderness. Cows and bulls follow the drainage as snow accumulates above 10,000 ft. Sit timbered benches above creek bottoms.',
+          access:
+            'Saguache CR 41G → USFS Rd 670 / La Garita CG. Foot/horse only into wilderness proper; rim access via spur roads gets you above the corridor.',
+        },
+        {
+          rank: 2,
+          name: 'Carnero Creek / Bonanza area — winter range edge',
+          layers: ['Elk Winter Concentration Area', 'Elk Winter Range'],
+          why: 'Lower-elevation foothills and ponderosa/PJ benches where descending elk first concentrate. Sun-warmed south aspects with browse. Highest density once snow has been on the ground a week.',
+          access:
+            'Saguache CR G and spurs off US-285. Mix of NF, BLM, and private — check boundaries. Park high, hike to glassing positions.',
+        },
+        {
+          rank: 3,
+          name: 'Sangre de Cristo foothills — eastern boundary',
+          layers: ['Elk Winter Range', 'Elk Overall Range'],
+          why: 'Sand Dunes elk herd (5,000–6,000+ animals) winters along this front. Less hunted than wilderness corridors. Patient glassing of foothill draws can produce.',
+          access:
+            'Routes from US-285 north of Saguache. Private land checkerboard — verify access carefully.',
+        },
+      ],
+      accessStrategy: [
+        'Stage from a higher trailhead on USFS Rd 600 / 670 for La Garita Creek access; pre-dawn approach mandatory',
+        'After any storm: drop 1,500–2,000 ft of elevation within 24 hrs — elk move fast on snow',
+        'Carnero/Bonanza foothills are the "weather pivot" — make this your plan B before storms hit',
+        'High non-resident pressure on Divide-area roads — get off-road early and stay mobile',
+      ],
     },
     quickTips: [
       'Let optics cover the country for you — glass extensively before moving',
@@ -669,6 +371,8 @@ const TABS = [
   { id: 'map', label: 'Map', Icon: Map },
   { id: 'gear', label: 'Gear', Icon: Package },
   { id: 'integrations', label: 'Integrations', Icon: Plug },
+  { id: 'huntplan', label: 'Hunt Plan', Icon: Target },
+  { id: 'misc', label: 'Misc', Icon: Info },
 ];
 
 // Waypoint categories
@@ -1484,72 +1188,79 @@ function DirectionsPanel({ unit }) {
           </p>
         </div>
       </Card>
-      <Card>
-        <SectionLabel>All-Units Comparison</SectionLabel>
-        <div style={{ overflowX: 'auto' }}>
-          <table
-            style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}
-            aria-label="Drive distance comparison across all hunt units"
-          >
-            <thead>
-              <tr>
-                {[
-                  'Unit',
-                  'Drive Distance',
-                  'Drive Time',
-                  'Nearest Airport',
-                ].map(h => (
-                  <th
-                    key={h}
-                    scope="col"
-                    style={{
-                      textAlign: 'left',
-                      padding: '6px 12px',
-                      fontFamily: "'IBM Plex Mono', monospace",
-                      fontSize: 10,
-                      letterSpacing: '0.1em',
-                      textTransform: 'uppercase',
-                      color: C.textMuted,
-                      borderBottom: `1px solid ${C.border}`,
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {UNITS.map((u, i) => (
-                <tr
-                  key={u.id}
-                  style={{
-                    background: i % 2 === 0 ? 'transparent' : `${C.surface}88`,
-                  }}
-                >
-                  <td
-                    style={{
-                      padding: '8px 12px',
-                      color: C.accent,
-                      fontFamily: "'IBM Plex Mono', monospace",
-                    }}
-                  >
-                    {u.displayName}
-                  </td>
-                  <td style={{ padding: '8px 12px', color: C.text }}>
-                    {u.directions.drive.distance}
-                  </td>
-                  <td style={{ padding: '8px 12px', color: C.text }}>
-                    {u.directions.drive.time}
-                  </td>
-                  <td style={{ padding: '8px 12px', color: C.textSub }}>
-                    {u.directions.fly.airport}
-                  </td>
+      {UNITS.length > 1 && (
+        <Card>
+          <SectionLabel>All-Units Comparison</SectionLabel>
+          <div style={{ overflowX: 'auto' }}>
+            <table
+              style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                fontSize: 13,
+              }}
+              aria-label="Drive distance comparison across all hunt units"
+            >
+              <thead>
+                <tr>
+                  {[
+                    'Unit',
+                    'Drive Distance',
+                    'Drive Time',
+                    'Nearest Airport',
+                  ].map(h => (
+                    <th
+                      key={h}
+                      scope="col"
+                      style={{
+                        textAlign: 'left',
+                        padding: '6px 12px',
+                        fontFamily: "'IBM Plex Mono', monospace",
+                        fontSize: 10,
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        color: C.textMuted,
+                        borderBottom: `1px solid ${C.border}`,
+                      }}
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              </thead>
+              <tbody>
+                {UNITS.map((u, i) => (
+                  <tr
+                    key={u.id}
+                    style={{
+                      background:
+                        i % 2 === 0 ? 'transparent' : `${C.surface}88`,
+                    }}
+                  >
+                    <td
+                      style={{
+                        padding: '8px 12px',
+                        color: C.accent,
+                        fontFamily: "'IBM Plex Mono', monospace",
+                      }}
+                    >
+                      {u.displayName}
+                    </td>
+                    <td style={{ padding: '8px 12px', color: C.text }}>
+                      {u.directions.drive.distance}
+                    </td>
+                    <td style={{ padding: '8px 12px', color: C.text }}>
+                      {u.directions.drive.time}
+                    </td>
+                    <td style={{ padding: '8px 12px', color: C.textSub }}>
+                      {u.directions.fly.airport}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
@@ -2856,7 +2567,8 @@ function DrawOddsPanel({ unit }) {
   }
 
   const { huntCode, year, odds, applicants, tags } = unit.drawOdds;
-  const drawRate = (applicants && tags) ? ((tags / applicants) * 100).toFixed(1) : null;
+  const drawRate =
+    applicants && tags ? ((tags / applicants) * 100).toFixed(1) : null;
 
   // Find key breakpoints
   const halfChance = odds.find(o => o.chance >= 50);
@@ -2864,31 +2576,50 @@ function DrawOddsPanel({ unit }) {
 
   return (
     <Card style={{ marginTop: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 16,
+        }}
+      >
         <SectionLabel>Draw Odds — {huntCode}</SectionLabel>
-        <div style={{
-          fontSize: 11,
-          color: C.textSub,
-          fontFamily: "'Oswald', sans-serif",
-          letterSpacing: '0.04em'
-        }}>
+        <div
+          style={{
+            fontSize: 11,
+            color: C.textSub,
+            fontFamily: "'Oswald', sans-serif",
+            letterSpacing: '0.04em',
+          }}
+        >
           {year} DATA FROM GOHUNT
         </div>
       </div>
 
       {/* Key Stats */}
       {(applicants || tags || drawRate) && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 12,
-          marginBottom: 20,
-          padding: 12,
-          background: C.surfaceAlt,
-          borderRadius: 6,
-        }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: 12,
+            marginBottom: 20,
+            padding: 12,
+            background: C.surfaceAlt,
+            borderRadius: 6,
+          }}
+        >
           <div>
-            <div style={{ fontSize: 11, color: C.textSub, marginBottom: 4, fontFamily: "'Oswald', sans-serif", letterSpacing: '0.04em' }}>
+            <div
+              style={{
+                fontSize: 11,
+                color: C.textSub,
+                marginBottom: 4,
+                fontFamily: "'Oswald', sans-serif",
+                letterSpacing: '0.04em',
+              }}
+            >
               APPLICANTS
             </div>
             <div style={{ fontSize: 18, color: C.text, fontWeight: 600 }}>
@@ -2896,7 +2627,15 @@ function DrawOddsPanel({ unit }) {
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 11, color: C.textSub, marginBottom: 4, fontFamily: "'Oswald', sans-serif", letterSpacing: '0.04em' }}>
+            <div
+              style={{
+                fontSize: 11,
+                color: C.textSub,
+                marginBottom: 4,
+                fontFamily: "'Oswald', sans-serif",
+                letterSpacing: '0.04em',
+              }}
+            >
               TAGS
             </div>
             <div style={{ fontSize: 18, color: C.text, fontWeight: 600 }}>
@@ -2904,7 +2643,15 @@ function DrawOddsPanel({ unit }) {
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 11, color: C.textSub, marginBottom: 4, fontFamily: "'Oswald', sans-serif", letterSpacing: '0.04em' }}>
+            <div
+              style={{
+                fontSize: 11,
+                color: C.textSub,
+                marginBottom: 4,
+                fontFamily: "'Oswald', sans-serif",
+                letterSpacing: '0.04em',
+              }}
+            >
               DRAW RATE
             </div>
             <div style={{ fontSize: 18, color: C.accent, fontWeight: 600 }}>
@@ -2916,54 +2663,69 @@ function DrawOddsPanel({ unit }) {
 
       {/* Draw Odds Table */}
       <div style={{ marginBottom: 12 }}>
-        <div style={{
-          fontSize: 13,
-          color: C.text,
-          marginBottom: 10,
-          fontFamily: "'Oswald', sans-serif",
-          letterSpacing: '0.04em'
-        }}>
+        <div
+          style={{
+            fontSize: 13,
+            color: C.text,
+            marginBottom: 10,
+            fontFamily: "'Oswald', sans-serif",
+            letterSpacing: '0.04em',
+          }}
+        >
           DRAW PROBABILITY BY PREFERENCE POINTS
         </div>
 
         {/* Horizontal scroll container for mobile */}
         <div style={{ overflowX: 'auto', overflowY: 'hidden' }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(35, 1fr)',
-            gap: 3,
-            minWidth: 700,
-            marginBottom: 8,
-          }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(35, 1fr)',
+              gap: 3,
+              minWidth: 700,
+              marginBottom: 8,
+            }}
+          >
             {odds.map(({ points, chance }) => {
               const height = Math.max(chance, 2); // Minimum 2% for visibility
-              const isBreakpoint = (halfChance && points === halfChance.points) ||
-                                   (highChance && points === highChance.points);
+              const isBreakpoint =
+                (halfChance && points === halfChance.points) ||
+                (highChance && points === highChance.points);
 
               return (
-                <div key={points} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  {/* Bar */}
-                  <div style={{
-                    width: '100%',
-                    height: 100,
+                <div
+                  key={points}
+                  style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    justifyContent: 'flex-end',
-                    position: 'relative',
-                  }}>
+                    alignItems: 'center',
+                  }}
+                >
+                  {/* Bar */}
+                  <div
+                    style={{
+                      width: '100%',
+                      height: 100,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'flex-end',
+                      position: 'relative',
+                    }}
+                  >
                     <div
                       style={{
                         width: '100%',
                         height: `${height}%`,
-                        background: chance === 0
-                          ? C.border
-                          : chance < 25
-                          ? '#c04a38'
-                          : chance < 50
-                          ? '#c4961a'
-                          : chance < 75
-                          ? '#6aa85a'
-                          : '#4a9a5a',
+                        background:
+                          chance === 0
+                            ? C.border
+                            : chance < 25
+                              ? '#c04a38'
+                              : chance < 50
+                                ? '#c4961a'
+                                : chance < 75
+                                  ? '#6aa85a'
+                                  : '#4a9a5a',
                         borderRadius: '2px 2px 0 0',
                         transition: 'all 0.2s',
                         border: isBreakpoint ? `2px solid ${C.accent}` : 'none',
@@ -2973,12 +2735,14 @@ function DrawOddsPanel({ unit }) {
                   </div>
                   {/* Point label - show every 5th */}
                   {points % 5 === 0 && (
-                    <div style={{
-                      fontSize: 10,
-                      color: C.textSub,
-                      marginTop: 4,
-                      fontFamily: "'Oswald', sans-serif",
-                    }}>
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: C.textSub,
+                        marginTop: 4,
+                        fontFamily: "'Oswald', sans-serif",
+                      }}
+                    >
                       {points}
                     </div>
                   )}
@@ -2989,28 +2753,58 @@ function DrawOddsPanel({ unit }) {
         </div>
 
         {/* Legend */}
-        <div style={{
-          display: 'flex',
-          gap: 16,
-          flexWrap: 'wrap',
-          fontSize: 11,
-          color: C.textSub,
-          marginTop: 12,
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: 16,
+            flexWrap: 'wrap',
+            fontSize: 11,
+            color: C.textSub,
+            marginTop: 12,
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 12, height: 12, background: '#c04a38', borderRadius: 2 }} />
+            <div
+              style={{
+                width: 12,
+                height: 12,
+                background: '#c04a38',
+                borderRadius: 2,
+              }}
+            />
             <span>0-24%</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 12, height: 12, background: '#c4961a', borderRadius: 2 }} />
+            <div
+              style={{
+                width: 12,
+                height: 12,
+                background: '#c4961a',
+                borderRadius: 2,
+              }}
+            />
             <span>25-49%</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 12, height: 12, background: '#6aa85a', borderRadius: 2 }} />
+            <div
+              style={{
+                width: 12,
+                height: 12,
+                background: '#6aa85a',
+                borderRadius: 2,
+              }}
+            />
             <span>50-74%</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 12, height: 12, background: '#4a9a5a', borderRadius: 2 }} />
+            <div
+              style={{
+                width: 12,
+                height: 12,
+                background: '#4a9a5a',
+                borderRadius: 2,
+              }}
+            />
             <span>75-100%</span>
           </div>
         </div>
@@ -3018,38 +2812,1033 @@ function DrawOddsPanel({ unit }) {
 
       {/* Key Insights */}
       {(halfChance || highChance) && (
-        <div style={{
-          marginTop: 16,
-          padding: 12,
-          background: C.surfaceAlt,
-          borderRadius: 6,
-          fontSize: 13,
-          lineHeight: 1.6,
-        }}>
-          <div style={{
-            color: C.text,
-            marginBottom: 6,
-            fontFamily: "'Oswald', sans-serif",
-            letterSpacing: '0.04em',
-            fontSize: 12,
-          }}>
+        <div
+          style={{
+            marginTop: 16,
+            padding: 12,
+            background: C.surfaceAlt,
+            borderRadius: 6,
+            fontSize: 13,
+            lineHeight: 1.6,
+          }}
+        >
+          <div
+            style={{
+              color: C.text,
+              marginBottom: 6,
+              fontFamily: "'Oswald', sans-serif",
+              letterSpacing: '0.04em',
+              fontSize: 12,
+            }}
+          >
             KEY INSIGHTS
           </div>
           <ul style={{ margin: 0, paddingLeft: 20, color: C.textSub }}>
             {halfChance && (
               <li style={{ marginBottom: 4 }}>
-                <strong style={{ color: C.accent }}>{halfChance.points} points</strong> for 50%+ draw chance ({halfChance.chance}%)
+                <strong style={{ color: C.accent }}>
+                  {halfChance.points} points
+                </strong>{' '}
+                for 50%+ draw chance ({halfChance.chance}%)
               </li>
             )}
             {highChance && (
               <li>
-                <strong style={{ color: C.accent }}>{highChance.points} points</strong> for 90%+ draw chance ({highChance.chance}%)
+                <strong style={{ color: C.accent }}>
+                  {highChance.points} points
+                </strong>{' '}
+                for 90%+ draw chance ({highChance.chance}%)
               </li>
             )}
           </ul>
         </div>
       )}
     </Card>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NAVIGATION PANEL — KML/KMZ export for ATAK
+// ═══════════════════════════════════════════════════════════════
+function escapeXml(s) {
+  return String(s ?? '').replace(
+    /[<>&"']/g,
+    c =>
+      ({
+        '<': '&lt;',
+        '>': '&gt;',
+        '&': '&amp;',
+        '"': '&quot;',
+        "'": '&apos;',
+      })[c]
+  );
+}
+
+function buildKML(unit, waypoints) {
+  const placemarks = [
+    `    <Placemark>
+      <name>${escapeXml(unit.displayName)} — Center</name>
+      <description>${escapeXml(unit.nickname || 'Unit center')}</description>
+      <Point><coordinates>${unit.coords.lng},${unit.coords.lat},0</coordinates></Point>
+    </Placemark>`,
+    ...waypoints.map(wp => {
+      const cat = WAYPOINT_CATEGORIES[wp.category] || WAYPOINT_CATEGORIES.other;
+      const desc = `${cat.label}${wp.notes ? '\n\n' + wp.notes : ''}`;
+      return `    <Placemark>
+      <name>${escapeXml(wp.name)}</name>
+      <description>${escapeXml(desc)}</description>
+      <Point><coordinates>${wp.lng},${wp.lat},0</coordinates></Point>
+    </Placemark>`;
+    }),
+  ].join('\n');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>${escapeXml(unit.displayName)} — Elk Hunt</name>
+    <description>${escapeXml(`${waypoints.length} waypoint(s). Generated from elkhuntplanner.`)}</description>
+${placemarks}
+  </Document>
+</kml>`;
+}
+
+function NavigationPanel({ unit }) {
+  const [waypoints, setWaypoints] = useState([]);
+  const storageKey = `elk-waypoints-${unit.id}`;
+
+  useEffect(() => {
+    window.storage
+      ?.get(storageKey)
+      .then(r => setWaypoints(r?.value || []))
+      .catch(() => setWaypoints([]));
+  }, [unit.id, storageKey]);
+
+  const handleDownload = () => {
+    const kml = buildKML(unit, waypoints);
+    const blob = new Blob([kml], {
+      type: 'application/vnd.google-earth.kml+xml',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${unit.id}-elkhunt.kml`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const total = waypoints.length + 1; // +1 for unit center
+
+  return (
+    <Card style={{ marginTop: 16 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 12,
+        }}
+      >
+        <SectionLabel>Navigation — ATAK / GPS Export</SectionLabel>
+        <button
+          onClick={handleDownload}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '6px 14px',
+            background: C.accent,
+            color: C.bg,
+            border: 'none',
+            borderRadius: 6,
+            fontFamily: "'Oswald', sans-serif",
+            fontSize: 13,
+            letterSpacing: '0.06em',
+            cursor: 'pointer',
+          }}
+          aria-label={`Download ${unit.displayName} KML for ATAK`}
+        >
+          <Download size={13} aria-hidden="true" />
+          DOWNLOAD KML
+        </button>
+      </div>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 12,
+          marginBottom: 16,
+          padding: 12,
+          background: C.surface,
+          borderRadius: 6,
+        }}
+      >
+        <div>
+          <div
+            style={{
+              fontSize: 11,
+              color: C.textSub,
+              marginBottom: 4,
+              fontFamily: "'Oswald', sans-serif",
+              letterSpacing: '0.04em',
+            }}
+          >
+            CENTER LAT
+          </div>
+          <div
+            style={{
+              fontSize: 14,
+              color: C.text,
+              fontFamily: "'IBM Plex Mono', monospace",
+            }}
+          >
+            {unit.coords.lat.toFixed(5)}
+          </div>
+        </div>
+        <div>
+          <div
+            style={{
+              fontSize: 11,
+              color: C.textSub,
+              marginBottom: 4,
+              fontFamily: "'Oswald', sans-serif",
+              letterSpacing: '0.04em',
+            }}
+          >
+            CENTER LNG
+          </div>
+          <div
+            style={{
+              fontSize: 14,
+              color: C.text,
+              fontFamily: "'IBM Plex Mono', monospace",
+            }}
+          >
+            {unit.coords.lng.toFixed(5)}
+          </div>
+        </div>
+        <div>
+          <div
+            style={{
+              fontSize: 11,
+              color: C.textSub,
+              marginBottom: 4,
+              fontFamily: "'Oswald', sans-serif",
+              letterSpacing: '0.04em',
+            }}
+          >
+            PLACEMARKS
+          </div>
+          <div
+            style={{
+              fontSize: 14,
+              color: C.accent,
+              fontWeight: 600,
+            }}
+          >
+            {total}
+          </div>
+        </div>
+      </div>
+
+      <div
+        style={{
+          fontSize: 13,
+          color: C.textSub,
+          lineHeight: 1.65,
+          marginBottom: 8,
+        }}
+      >
+        <strong style={{ color: C.text }}>Load in ATAK:</strong> Save the KML to
+        your device, then in ATAK go to <em>Import Manager → Local SD</em>,
+        select the file, and choose <em>Import</em>. Waypoints appear as markers
+        at the categories you tagged.
+      </div>
+      {waypoints.length === 0 && (
+        <div
+          style={{
+            fontSize: 12,
+            color: C.textMuted,
+            fontStyle: 'italic',
+            marginTop: 4,
+          }}
+        >
+          No waypoints yet — only the unit center will export. Add waypoints in
+          the Waypoints tab.
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SIGHTINGS PANEL — recent elk observations log
+// ═══════════════════════════════════════════════════════════════
+function SightingsPanel({ unit }) {
+  const [sightings, setSightings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState({
+    date: new Date().toISOString().slice(0, 10),
+    lat: unit.coords.lat.toFixed(4),
+    lng: unit.coords.lng.toFixed(4),
+    bulls: '',
+    cows: '',
+    calves: '',
+    notes: '',
+  });
+  const storageKey = `elk-sightings-${unit.id}`;
+
+  useEffect(() => {
+    setLoading(true);
+    window.storage
+      ?.get(storageKey)
+      .then(r => {
+        setSightings(r?.value || []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [unit.id, storageKey]);
+
+  const save = async next => {
+    setSightings(next);
+    try {
+      await window.storage?.set(storageKey, next);
+    } catch (error) {
+      console.error('Failed to save sightings:', error);
+    }
+  };
+
+  const handleAdd = () => {
+    const bulls = parseInt(form.bulls, 10) || 0;
+    const cows = parseInt(form.cows, 10) || 0;
+    const calves = parseInt(form.calves, 10) || 0;
+    if (bulls + cows + calves === 0 && !form.notes.trim()) return;
+
+    const entry = {
+      id: Date.now().toString(),
+      date: form.date,
+      lat: parseFloat(form.lat),
+      lng: parseFloat(form.lng),
+      bulls,
+      cows,
+      calves,
+      notes: form.notes.trim(),
+    };
+    save([entry, ...sightings]);
+    setForm({
+      date: new Date().toISOString().slice(0, 10),
+      lat: unit.coords.lat.toFixed(4),
+      lng: unit.coords.lng.toFixed(4),
+      bulls: '',
+      cows: '',
+      calves: '',
+      notes: '',
+    });
+  };
+
+  const handleDelete = id => {
+    if (confirm('Delete this sighting?')) {
+      save(sightings.filter(s => s.id !== id));
+    }
+  };
+
+  const inputStyle = {
+    background: C.surface,
+    border: `1px solid ${C.border}`,
+    borderRadius: 4,
+    color: C.text,
+    padding: '6px 8px',
+    fontSize: 13,
+    fontFamily: "'IBM Plex Mono', monospace",
+    width: '100%',
+    boxSizing: 'border-box',
+    outline: 'none',
+  };
+  const labelStyle = {
+    fontSize: 10,
+    color: C.textMuted,
+    fontFamily: "'Oswald', sans-serif",
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    marginBottom: 3,
+    display: 'block',
+  };
+
+  return (
+    <Card style={{ marginTop: 16 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          marginBottom: 12,
+        }}
+      >
+        <Eye size={14} style={{ color: C.accent }} aria-hidden="true" />
+        <SectionLabel>Recent Elk Sightings</SectionLabel>
+      </div>
+
+      {/* Add form */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
+          gap: 10,
+          marginBottom: 10,
+        }}
+      >
+        <div>
+          <label style={labelStyle}>Date</label>
+          <input
+            type="date"
+            value={form.date}
+            onChange={e => setForm({ ...form, date: e.target.value })}
+            style={inputStyle}
+          />
+        </div>
+        <div>
+          <label style={labelStyle}>Lat</label>
+          <input
+            value={form.lat}
+            onChange={e => setForm({ ...form, lat: e.target.value })}
+            style={inputStyle}
+          />
+        </div>
+        <div>
+          <label style={labelStyle}>Lng</label>
+          <input
+            value={form.lng}
+            onChange={e => setForm({ ...form, lng: e.target.value })}
+            style={inputStyle}
+          />
+        </div>
+        <div>
+          <label style={labelStyle}>Bulls</label>
+          <input
+            type="number"
+            min="0"
+            value={form.bulls}
+            onChange={e => setForm({ ...form, bulls: e.target.value })}
+            style={inputStyle}
+          />
+        </div>
+        <div>
+          <label style={labelStyle}>Cows</label>
+          <input
+            type="number"
+            min="0"
+            value={form.cows}
+            onChange={e => setForm({ ...form, cows: e.target.value })}
+            style={inputStyle}
+          />
+        </div>
+        <div>
+          <label style={labelStyle}>Calves</label>
+          <input
+            type="number"
+            min="0"
+            value={form.calves}
+            onChange={e => setForm({ ...form, calves: e.target.value })}
+            style={inputStyle}
+          />
+        </div>
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={labelStyle}>Notes</label>
+        <input
+          value={form.notes}
+          onChange={e => setForm({ ...form, notes: e.target.value })}
+          placeholder="Bedded in dark timber, moving NE at dawn…"
+          style={inputStyle}
+        />
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          marginBottom: 14,
+        }}
+      >
+        <button
+          onClick={handleAdd}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '6px 14px',
+            background: C.accent,
+            color: C.bg,
+            border: 'none',
+            borderRadius: 6,
+            fontFamily: "'Oswald', sans-serif",
+            fontSize: 13,
+            letterSpacing: '0.06em',
+            cursor: 'pointer',
+          }}
+        >
+          <Plus size={13} aria-hidden="true" />
+          LOG SIGHTING
+        </button>
+      </div>
+
+      {/* List */}
+      {loading ? (
+        <div style={{ color: C.textMuted, fontSize: 13 }}>Loading…</div>
+      ) : sightings.length === 0 ? (
+        <div style={{ color: C.textMuted, fontSize: 13, fontStyle: 'italic' }}>
+          No sightings logged yet.
+        </div>
+      ) : (
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          {sightings.map(s => {
+            const total = s.bulls + s.cows + s.calves;
+            return (
+              <li
+                key={s.id}
+                style={{
+                  padding: '10px 0',
+                  borderTop: `1px solid ${C.border}`,
+                  display: 'flex',
+                  gap: 12,
+                  alignItems: 'flex-start',
+                }}
+              >
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: 10,
+                      alignItems: 'center',
+                      marginBottom: 4,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 13,
+                        color: C.text,
+                        fontFamily: "'Oswald', sans-serif",
+                        letterSpacing: '0.05em',
+                      }}
+                    >
+                      {s.date}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        color: C.textSub,
+                        fontFamily: "'IBM Plex Mono', monospace",
+                      }}
+                    >
+                      {s.lat.toFixed(4)}, {s.lng.toFixed(4)}
+                    </span>
+                    <span style={{ fontSize: 12, color: C.accent }}>
+                      {total} elk
+                      {s.bulls > 0 && ` · ${s.bulls}B`}
+                      {s.cows > 0 && ` · ${s.cows}C`}
+                      {s.calves > 0 && ` · ${s.calves}Cf`}
+                    </span>
+                  </div>
+                  {s.notes && (
+                    <div
+                      style={{
+                        fontSize: 13,
+                        color: C.textSub,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {s.notes}
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => handleDelete(s.id)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: C.textMuted,
+                    cursor: 'pointer',
+                    padding: 4,
+                  }}
+                  aria-label="Delete sighting"
+                >
+                  <Trash2 size={14} aria-hidden="true" />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {unit.cpw && (
+        <div
+          style={{
+            marginTop: 16,
+            paddingTop: 12,
+            borderTop: `1px solid ${C.border}`,
+          }}
+        >
+          <SectionLabel>CPW Herd Composition</SectionLabel>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+              gap: 10,
+              fontSize: 13,
+              color: C.textSub,
+            }}
+          >
+            {unit.cpw.dau && (
+              <div>
+                <div style={labelStyle}>DAU</div>
+                <div style={{ color: C.text }}>{unit.cpw.dau}</div>
+              </div>
+            )}
+            {unit.cpw.herdEstimate && (
+              <div>
+                <div style={labelStyle}>Herd Est.</div>
+                <div style={{ color: C.text }}>
+                  {unit.cpw.herdEstimate.toLocaleString()}
+                </div>
+              </div>
+            )}
+            {unit.cpw.bullCowRatio && (
+              <div>
+                <div style={labelStyle}>Bull:Cow</div>
+                <div style={{ color: C.text }}>{unit.cpw.bullCowRatio}</div>
+              </div>
+            )}
+            {unit.cpw.surveyYear && (
+              <div>
+                <div style={labelStyle}>Survey Year</div>
+                <div style={{ color: C.text }}>{unit.cpw.surveyYear}</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HUNT PLAN PANEL — synthesizes CPW Hunting Atlas elk range layers
+// into a ranked harvest plan with road access
+// ═══════════════════════════════════════════════════════════════
+const CPW_LAYER_LEGEND = [
+  {
+    name: 'Elk Overall Range',
+    desc: 'Total extent occupied by elk year-round. Use as baseline; refine with seasonal layers.',
+  },
+  {
+    name: 'Elk Resident Population Area',
+    desc: 'Non-migratory subpopulation that stays in the same general area year-round.',
+  },
+  {
+    name: 'Elk Summer Range',
+    desc: 'Occupied roughly June–September. High elevation, alpine and subalpine.',
+  },
+  {
+    name: 'Elk Summer Concentration Range',
+    desc: 'Highest summer densities — calving grounds, calf-rearing meadows, mineral parks.',
+  },
+  {
+    name: 'Elk Winter Range',
+    desc: 'Occupied during snow season. Lower elevation, south-facing slopes, browse-rich.',
+  },
+  {
+    name: 'Elk Winter Concentration Area',
+    desc: 'Highest winter densities — severe-weather refugia. Critical during deep snow.',
+  },
+  {
+    name: 'Elk Migration Corridors',
+    desc: 'Narrow connectivity zones used during seasonal movement between ranges. Funnel terrain.',
+  },
+  {
+    name: 'Elk Migration Patterns',
+    desc: 'General directional movement information showing how herds shift across the landscape.',
+  },
+];
+
+const RANK_COLORS = [C.accent, C.greenLight, C.textSub];
+
+function HuntPlanPanel({ unit }) {
+  const plan = unit.huntPlan;
+  const atlasUrl =
+    'https://ndismaps.nrel.colostate.edu/index.html?app=HuntingAtlas';
+
+  if (!plan) {
+    return (
+      <Card style={{ marginTop: 16 }}>
+        <SectionLabel>Hunt Plan</SectionLabel>
+        <p style={{ color: C.textSub, fontSize: 14, lineHeight: 1.6 }}>
+          No hunt plan curated for this unit yet. Open the{' '}
+          <a
+            href={atlasUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: C.accent }}
+          >
+            CPW Hunting Atlas
+          </a>{' '}
+          and toggle the Elk range layers (Migration Corridors, Winter
+          Concentration, Summer Concentration, etc.) over GMU{' '}
+          {unit.gohuntSlug || unit.id} to identify high-probability zones.
+        </p>
+      </Card>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Header + Atlas link */}
+      <Card>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 12,
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Target size={16} style={{ color: C.accent }} aria-hidden="true" />
+            <SectionLabel>Hunt Plan — {unit.displayName}</SectionLabel>
+          </div>
+          <a
+            href={atlasUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '6px 12px',
+              background: C.surface,
+              color: C.accent,
+              border: `1px solid ${C.border}`,
+              borderRadius: 6,
+              fontFamily: "'Oswald', sans-serif",
+              fontSize: 12,
+              letterSpacing: '0.06em',
+              textDecoration: 'none',
+            }}
+            aria-label="Open CPW Hunting Atlas in new tab"
+          >
+            CPW HUNTING ATLAS
+            <ExternalLink size={12} aria-hidden="true" />
+          </a>
+        </div>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'auto 1fr',
+            gap: '6px 14px',
+            fontSize: 13,
+            color: C.textSub,
+            lineHeight: 1.6,
+          }}
+        >
+          <div
+            style={{
+              color: C.textMuted,
+              fontFamily: "'Oswald', sans-serif",
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              fontSize: 11,
+              paddingTop: 2,
+            }}
+          >
+            Hunt
+          </div>
+          <div style={{ color: C.text }}>{plan.hunt}</div>
+          <div
+            style={{
+              color: C.textMuted,
+              fontFamily: "'Oswald', sans-serif",
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              fontSize: 11,
+              paddingTop: 2,
+            }}
+          >
+            Phase
+          </div>
+          <div>{plan.rangePhase}</div>
+        </div>
+
+        {plan.priorityLayers && plan.priorityLayers.length > 0 && (
+          <div style={{ marginTop: 14 }}>
+            <div
+              style={{
+                fontSize: 11,
+                color: C.textMuted,
+                fontFamily: "'Oswald', sans-serif",
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                marginBottom: 8,
+              }}
+            >
+              Priority CPW Layers for this Hunt
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {plan.priorityLayers.map(layer => (
+                <span
+                  key={layer}
+                  style={{
+                    background: C.surface,
+                    border: `1px solid ${C.borderLight}`,
+                    color: C.accent,
+                    padding: '4px 10px',
+                    borderRadius: 12,
+                    fontSize: 12,
+                    fontFamily: "'IBM Plex Mono', monospace",
+                  }}
+                >
+                  {layer}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* Ranked zones */}
+      <Card>
+        <SectionLabel>Highest-Probability Zones (Ranked)</SectionLabel>
+        <ol style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          {plan.zones.map((zone, idx) => {
+            const color = RANK_COLORS[idx] || C.textSub;
+            return (
+              <li
+                key={zone.rank}
+                style={{
+                  marginTop: idx === 0 ? 4 : 16,
+                  paddingTop: idx === 0 ? 0 : 16,
+                  borderTop: idx === 0 ? 'none' : `1px solid ${C.border}`,
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    marginBottom: 8,
+                  }}
+                >
+                  <span
+                    style={{
+                      background: color,
+                      color: C.bg,
+                      width: 26,
+                      height: 26,
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontFamily: "'Oswald', sans-serif",
+                      fontWeight: 700,
+                      fontSize: 14,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {zone.rank}
+                  </span>
+                  <h4
+                    style={{
+                      margin: 0,
+                      color: C.text,
+                      fontFamily: "'Oswald', sans-serif",
+                      fontSize: 16,
+                      letterSpacing: '0.02em',
+                    }}
+                  >
+                    {zone.name}
+                  </h4>
+                </div>
+                {zone.layers && zone.layers.length > 0 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: 5,
+                      flexWrap: 'wrap',
+                      marginBottom: 8,
+                      marginLeft: 36,
+                    }}
+                  >
+                    {zone.layers.map(layer => (
+                      <span
+                        key={layer}
+                        style={{
+                          background: C.surface,
+                          color: C.textSub,
+                          padding: '2px 8px',
+                          borderRadius: 4,
+                          fontSize: 10,
+                          fontFamily: "'IBM Plex Mono', monospace",
+                          letterSpacing: '0.02em',
+                        }}
+                      >
+                        {layer}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div
+                  style={{
+                    marginLeft: 36,
+                    display: 'grid',
+                    gridTemplateColumns: 'auto 1fr',
+                    gap: '4px 12px',
+                    fontSize: 13,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  <div
+                    style={{
+                      color: C.textMuted,
+                      fontFamily: "'Oswald', sans-serif",
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      fontSize: 10,
+                      paddingTop: 3,
+                    }}
+                  >
+                    Why
+                  </div>
+                  <div style={{ color: C.textSub }}>{zone.why}</div>
+                  <div
+                    style={{
+                      color: C.textMuted,
+                      fontFamily: "'Oswald', sans-serif",
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      fontSize: 10,
+                      paddingTop: 3,
+                    }}
+                  >
+                    Access
+                  </div>
+                  <div style={{ color: C.text }}>{zone.access}</div>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </Card>
+
+      {/* Access strategy */}
+      {plan.accessStrategy && plan.accessStrategy.length > 0 && (
+        <Card>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              marginBottom: 10,
+            }}
+          >
+            <Navigation
+              size={14}
+              style={{ color: C.accent }}
+              aria-hidden="true"
+            />
+            <SectionLabel>Access & Execution Strategy</SectionLabel>
+          </div>
+          <ul
+            style={{
+              listStyle: 'none',
+              padding: 0,
+              margin: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+            }}
+          >
+            {plan.accessStrategy.map((step, idx) => (
+              <li
+                key={idx}
+                style={{
+                  display: 'flex',
+                  gap: 10,
+                  fontSize: 13,
+                  color: C.textSub,
+                  lineHeight: 1.6,
+                }}
+              >
+                <ChevronRight
+                  size={14}
+                  style={{ color: C.accent, flexShrink: 0, marginTop: 3 }}
+                  aria-hidden="true"
+                />
+                <span>{step}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      {/* CPW layer legend */}
+      <Card>
+        <SectionLabel>CPW Elk Range Layer Reference</SectionLabel>
+        <p
+          style={{
+            color: C.textMuted,
+            fontSize: 12,
+            lineHeight: 1.6,
+            margin: '0 0 12px',
+            fontStyle: 'italic',
+          }}
+        >
+          Source: Colorado Parks & Wildlife via the NDIS Hunting Atlas. Toggle
+          these layers in the Atlas to see exact polygon boundaries inside GMU{' '}
+          {unit.gohuntSlug || unit.id}.
+        </p>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          {CPW_LAYER_LEGEND.map(layer => (
+            <li
+              key={layer.name}
+              style={{
+                padding: '8px 0',
+                borderTop: `1px solid ${C.border}`,
+                fontSize: 13,
+                lineHeight: 1.55,
+              }}
+            >
+              <div
+                style={{
+                  color: C.text,
+                  fontFamily: "'Oswald', sans-serif",
+                  fontSize: 13,
+                  letterSpacing: '0.04em',
+                  marginBottom: 2,
+                }}
+              >
+                {layer.name}
+              </div>
+              <div style={{ color: C.textSub }}>{layer.desc}</div>
+            </li>
+          ))}
+        </ul>
+      </Card>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MISC PANEL — draw odds and other reference data
+// ═══════════════════════════════════════════════════════════════
+function MiscPanel({ unit }) {
+  return (
+    <>
+      <DrawOddsPanel unit={unit} />
+      <NotesSection unitId={unit.id} />
+    </>
   );
 }
 
@@ -3159,7 +3948,7 @@ function NotesSection({ unitId }) {
 // MAIN APP
 // ═══════════════════════════════════════════════════════════════
 function ElkHuntDashboardInner() {
-  const [activeUnitId, setActiveUnitId] = useState(UNITS[2].id);
+  const [activeUnitId, setActiveUnitId] = useState(UNITS[0].id);
   const [activeTab, setActiveTab] = useState('overview');
   const [customUnits, setCustomUnits] = useState([]);
   const [showAddUnitForm, setShowAddUnitForm] = useState(false);
@@ -3182,7 +3971,7 @@ function ElkHuntDashboardInner() {
 
   // Listen for auth modal events from FeatureGate
   useEffect(() => {
-    const handleOpenAuthModal = (e) => {
+    const handleOpenAuthModal = e => {
       setAuthModalMode(e.detail?.mode || 'login');
       setAuthModalOpen(true);
     };
@@ -3415,8 +4204,8 @@ function ElkHuntDashboardInner() {
             </div>
 
             {/* Auth UI */}
-            {isConfigured && (
-              isAuthenticated ? (
+            {isConfigured &&
+              (isAuthenticated ? (
                 <UserMenu />
               ) : (
                 <button
@@ -3437,22 +4226,28 @@ function ElkHuntDashboardInner() {
                     letterSpacing: '0.05em',
                     transition: 'background-color 0.15s',
                   }}
-                  onMouseEnter={(e) => {
+                  onMouseEnter={e => {
                     e.target.style.backgroundColor = C.accentHover;
                   }}
-                  onMouseLeave={(e) => {
+                  onMouseLeave={e => {
                     e.target.style.backgroundColor = C.accent;
                   }}
                 >
                   SIGN IN
                 </button>
-              )
-            )}
+              ))}
           </div>
         </header>
 
         {/* BODY */}
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
+        <div
+          style={{
+            display: 'flex',
+            flex: 1,
+            overflow: 'hidden',
+            position: 'relative',
+          }}
+        >
           {/* Mobile Overlay */}
           {mobileMenuOpen && (
             <div
@@ -3505,7 +4300,10 @@ function ElkHuntDashboardInner() {
               >
                 Hunt Units · 2026
               </p>
-              <FeatureGate feature={FEATURES.AUTHENTICATED.CUSTOM_UNITS} showPrompt={false}>
+              <FeatureGate
+                feature={FEATURES.AUTHENTICATED.CUSTOM_UNITS}
+                showPrompt={false}
+              >
                 <button
                   onClick={() => setShowAddUnitForm(true)}
                   style={{
@@ -3835,16 +4633,23 @@ function ElkHuntDashboardInner() {
                       {id === 'waypoints' && <WaypointsPanel unit={unit} />}
                       {id === 'map' && <MapPanel unit={unit} />}
                       {id === 'gear' && (
-                        <FeatureGate feature={FEATURES.AUTHENTICATED.GEAR_TRACKING}>
+                        <FeatureGate
+                          feature={FEATURES.AUTHENTICATED.GEAR_TRACKING}
+                        >
                           <GearList />
                         </FeatureGate>
                       )}
                       {id === 'integrations' && <IntegrationsPanel />}
+                      {id === 'huntplan' && <HuntPlanPanel unit={unit} />}
+                      {id === 'misc' && <MiscPanel unit={unit} />}
                       {id !== 'integrations' &&
                         id !== 'waypoints' &&
-                        id !== 'gear' && (
+                        id !== 'gear' &&
+                        id !== 'huntplan' &&
+                        id !== 'misc' && (
                           <>
-                            <DrawOddsPanel unit={unit} />
+                            <NavigationPanel unit={unit} />
+                            <SightingsPanel unit={unit} />
                             <NotesSection unitId={unit.id} />
                           </>
                         )}
