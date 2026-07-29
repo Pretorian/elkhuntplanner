@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  within,
+} from '@testing-library/react';
 import ElkHuntDashboard from '../ElkHuntDashboard';
 
 describe('ElkHuntDashboard', () => {
@@ -63,5 +69,31 @@ describe('ElkHuntDashboard', () => {
       expect(screen.getAllByText(/map/i).length).toBeGreaterThan(0);
       expect(screen.getAllByText(/integrations/i).length).toBeGreaterThan(0);
     });
+  });
+
+  it('renders every tab panel without a ReferenceError', async () => {
+    render(<ElkHuntDashboard />);
+    const tablist = await screen.findByRole('tablist');
+    const tabs = within(tablist).getAllByRole('tab');
+    // Clicking each tab renders its panel; a missing panel component would
+    // throw during render and fail this test (regression guard).
+    for (const tab of tabs) {
+      fireEvent.click(tab);
+      await waitFor(() => expect(tab).toHaveAttribute('aria-selected', 'true'));
+    }
+    // Directions/Access/Lodging/Map panels in particular must exist.
+    const names = tabs.map(t => t.textContent.toLowerCase()).join(' ');
+    expect(names).toMatch(/directions/);
+    expect(names).toMatch(/map/);
+  });
+
+  it('does not show removed Terrain or Misc tabs', () => {
+    render(<ElkHuntDashboard />);
+    const tablist = screen.getByRole('tablist');
+    const labels = within(tablist)
+      .getAllByRole('tab')
+      .map(t => t.textContent.toLowerCase());
+    expect(labels.some(l => l.includes('terrain'))).toBe(false);
+    expect(labels.some(l => l.includes('misc'))).toBe(false);
   });
 });

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Mountain,
   MapPin,
@@ -28,12 +28,19 @@ import {
   Menu,
   Download,
   Eye,
+  Wind,
+  RefreshCw,
+  Upload,
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { storage } from './storage';
 import GearList from './components/GearList';
+import RouteThermalSimulator from './components/RouteThermalSimulator';
+import TessaReliefMap from './components/TessaReliefMap';
 import AddUnitForm from './components/AddUnitForm';
+import { fetchElevationsCached, isElevationConfigured } from './lib/elevation';
+import { parseGPX } from './lib/gpx';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AuthModal from './components/AuthModal';
 import UserMenu from './components/UserMenu';
@@ -363,16 +370,15 @@ const CHOICE_CONFIG = {
 };
 const TABS = [
   { id: 'overview', label: 'Overview', Icon: Layers },
-  { id: 'terrain', label: 'Terrain', Icon: Mountain },
   { id: 'access', label: 'Access', Icon: TreePine },
   { id: 'directions', label: 'Directions', Icon: Compass },
   { id: 'lodging', label: 'Lodging', Icon: Home },
   { id: 'waypoints', label: 'Waypoints', Icon: MapPin },
   { id: 'map', label: 'Map', Icon: Map },
   { id: 'gear', label: 'Gear', Icon: Package },
+  { id: 'routesim', label: 'Route Sim', Icon: Wind },
   { id: 'integrations', label: 'Integrations', Icon: Plug },
   { id: 'huntplan', label: 'Hunt Plan', Icon: Target },
-  { id: 'misc', label: 'Misc', Icon: Info },
 ];
 
 // Waypoint categories
@@ -466,7 +472,7 @@ function Card({ children, style = {} }) {
     </div>
   );
 }
-function SectionLabel({ children }) {
+function SectionLabel({ children, style = {} }) {
   return (
     <p
       style={{
@@ -476,6 +482,7 @@ function SectionLabel({ children }) {
         textTransform: 'uppercase',
         color: C.textMuted,
         margin: '0 0 10px',
+        ...style,
       }}
     >
       {children}
@@ -889,183 +896,9 @@ function OverviewPanel({ unit }) {
           ))}
         </div>
       </Card>
-    </div>
-  );
-}
 
-function TerrainPanel({ unit }) {
-  const { lat, lng, zoom } = unit.coords;
-  // OpenStreetMap topo layer embed
-  const osmTopoUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.8}%2C${lat - 0.5}%2C${lng + 0.8}%2C${lat + 0.5}&layer=cyclemap&marker=${lat}%2C${lng}`;
-  const topoLinkUrl = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=${zoom}/${lat}/${lng}&layers=C`;
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <Card>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 8,
-            marginBottom: 12,
-          }}
-        >
-          <SectionLabel>Terrain Narrative · GoHunt</SectionLabel>
-          <GoHuntBadge slug={unit.gohuntSlug} />
-        </div>
-        <p
-          style={{
-            fontSize: 14,
-            color: C.text,
-            lineHeight: 1.75,
-            margin: 0,
-            fontFamily: "'Source Serif 4', Georgia, serif",
-          }}
-        >
-          {unit.terrain.summary}
-        </p>
-      </Card>
-
-      {/* Topographic Map */}
-      <Card>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 8,
-            marginBottom: 12,
-          }}
-        >
-          <div>
-            <SectionLabel>Topographic Map</SectionLabel>
-            <p style={{ fontSize: 12, color: C.textMuted, margin: 0 }}>
-              Terrain visualization · {unit.elevation[0].toLocaleString()}–
-              {unit.elevation[1].toLocaleString()} ft
-            </p>
-          </div>
-          <a
-            href={topoLinkUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Open ${unit.displayName} topo map in new tab`}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 5,
-              padding: '3px 9px',
-              borderRadius: 4,
-              background: `${C.green}18`,
-              border: `1px solid ${C.green}44`,
-              color: C.green,
-              fontSize: 11,
-              fontFamily: "'IBM Plex Mono', monospace",
-              textDecoration: 'none',
-            }}
-          >
-            <ExternalLink size={11} aria-hidden="true" />
-            Full Topo Map
-          </a>
-        </div>
-
-        {/* Map iframe */}
-        <div
-          style={{
-            position: 'relative',
-            borderRadius: 8,
-            overflow: 'hidden',
-            border: `1px solid ${C.border}`,
-          }}
-        >
-          <iframe
-            title={`Topographic map of ${unit.displayName} terrain`}
-            src={osmTopoUrl}
-            width="100%"
-            height="360"
-            style={{ display: 'block', border: 'none' }}
-            loading="lazy"
-            sandbox="allow-scripts allow-same-origin"
-          />
-          {/* Elevation overlay */}
-          <div
-            style={{
-              position: 'absolute',
-              top: 10,
-              left: 10,
-              background: `${C.bg}ee`,
-              border: `1px solid ${C.border}`,
-              borderRadius: 6,
-              padding: '6px 10px',
-            }}
-          >
-            <span
-              style={{
-                fontSize: 11,
-                fontFamily: "'IBM Plex Mono', monospace",
-                color: C.accent,
-                fontWeight: 500,
-              }}
-            >
-              ▲ {unit.elevation[0].toLocaleString()}–
-              {unit.elevation[1].toLocaleString()} ft
-            </span>
-          </div>
-        </div>
-
-        {/* Map attribution */}
-        <p
-          style={{
-            fontSize: 10,
-            color: C.textMuted,
-            margin: '8px 0 0',
-            fontFamily: "'IBM Plex Mono', monospace",
-          }}
-        >
-          Topo data ©{' '}
-          <a
-            href="https://www.openstreetmap.org/copyright"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: C.textMuted }}
-          >
-            OpenStreetMap
-          </a>{' '}
-          contributors
-        </p>
-      </Card>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <Card>
-          <SectionLabel>Vegetation Zones</SectionLabel>
-          <BulletList items={unit.terrain.vegetation} />
-        </Card>
-        <Card>
-          <SectionLabel>Key Geographic Features</SectionLabel>
-          <BulletList
-            items={unit.terrain.features}
-            icon={MapPin}
-            iconColor={C.green}
-          />
-        </Card>
-      </div>
-      <Card>
-        <SectionLabel>Slope & Difficulty Note</SectionLabel>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-          <AlertTriangle
-            size={16}
-            style={{ color: C.amber, flexShrink: 0, marginTop: 2 }}
-            aria-hidden="true"
-          />
-          <p
-            style={{ fontSize: 14, color: C.text, lineHeight: 1.65, margin: 0 }}
-          >
-            {unit.terrain.slope}
-          </p>
-        </div>
-      </Card>
+      {/* Draw odds (relocated from the removed Misc tab) */}
+      <DrawOddsPanel unit={unit} />
     </div>
   );
 }
@@ -1368,130 +1201,12 @@ function LodgingPanel({ unit }) {
 
 function MapPanel({ unit }) {
   const { lat, lng, zoom } = unit.coords;
-  // OpenStreetMap embed — free, no API key
-  const osmUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 1.2}%2C${lat - 0.8}%2C${lng + 1.2}%2C${lat + 0.8}&layer=cyclemap&marker=${lat}%2C${lng}`;
-  const topoUrl = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=${zoom}/${lat}/${lng}&layers=C`;
   const gohuntUrl = `${INTEGRATIONS.gohunt.profileBase}${unit.gohuntSlug}`;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <Card>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 10,
-            marginBottom: 12,
-          }}
-        >
-          <div>
-            <SectionLabel>Unit Map — {unit.displayName}</SectionLabel>
-            <p style={{ fontSize: 12, color: C.textMuted, margin: 0 }}>
-              Topo layer via OpenStreetMap · Centered on {unit.nickname}
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <GoHuntBadge slug={unit.gohuntSlug} />
-            <a
-              href={topoUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Open ${unit.displayName} in OpenStreetMap (opens in new tab)`}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                padding: '3px 9px',
-                borderRadius: 4,
-                background: `${C.green}18`,
-                border: `1px solid ${C.green}44`,
-                color: C.green,
-                fontSize: 11,
-                fontFamily: "'IBM Plex Mono', monospace",
-                textDecoration: 'none',
-              }}
-            >
-              <ExternalLink size={11} aria-hidden="true" />
-              Open Full Map
-            </a>
-          </div>
-        </div>
-
-        {/* Map iframe */}
-        <div
-          style={{
-            position: 'relative',
-            borderRadius: 8,
-            overflow: 'hidden',
-            border: `1px solid ${C.border}`,
-          }}
-        >
-          <iframe
-            title={`Topographic map of ${unit.displayName} — ${unit.nickname}`}
-            src={osmUrl}
-            width="100%"
-            height="440"
-            style={{ display: 'block', border: 'none' }}
-            loading="lazy"
-            sandbox="allow-scripts allow-same-origin"
-          />
-          {/* Coords overlay */}
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 10,
-              left: 10,
-              background: `${C.bg}ee`,
-              border: `1px solid ${C.border}`,
-              borderRadius: 6,
-              padding: '6px 10px',
-              display: 'flex',
-              gap: 12,
-            }}
-          >
-            <span
-              style={{
-                fontSize: 11,
-                fontFamily: "'IBM Plex Mono', monospace",
-                color: C.textSub,
-              }}
-            >
-              {lat.toFixed(3)}°N / {Math.abs(lng).toFixed(3)}°W
-            </span>
-          </div>
-        </div>
-
-        {/* Attribution */}
-        <p
-          style={{
-            fontSize: 11,
-            color: C.textMuted,
-            margin: '8px 0 0',
-            fontFamily: "'IBM Plex Mono', monospace",
-          }}
-        >
-          Map data ©{' '}
-          <a
-            href="https://www.openstreetmap.org/copyright"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: C.textMuted }}
-          >
-            OpenStreetMap
-          </a>{' '}
-          contributors · Unit boundary data via{' '}
-          <a
-            href={gohuntUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: C.gohuntOrange }}
-          >
-            GoHunt
-          </a>
-        </p>
-      </Card>
+      {/* TessaDEM shaded-relief map */}
+      <TessaReliefMap unit={unit} />
 
       {/* Quick links */}
       <Card>
@@ -1554,6 +1269,7 @@ function WaypointsPanel({ unit }) {
   const [waypoints, setWaypoints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
+  const [formOpen, setFormOpen] = useState(false);
   const [selectedLayer, setSelectedLayer] = useState('tracestrack');
   const [formData, setFormData] = useState({
     name: '',
@@ -1586,6 +1302,92 @@ function WaypointsPanel({ unit }) {
     } catch (error) {
       console.error('Failed to save waypoints:', error);
       // Continue execution - waypoints are still updated in state
+    }
+  };
+
+  // ── Elevation (TessaDEM) ──────────────────────────────────────
+  const elevationEnabled = isElevationConfigured();
+  const [elevStatus, setElevStatus] = useState('idle'); // idle|loading|done|error|nokey
+  const [elevError, setElevError] = useState(null);
+  const elevFetchingRef = useRef(false);
+
+  // Fetch elevation for the given waypoints via TessaDEM and persist it.
+  const runElevationFetch = useCallback(
+    async (targets, force = false) => {
+      if (!targets.length || elevFetchingRef.current) return;
+      elevFetchingRef.current = true;
+      setElevStatus('loading');
+      setElevError(null);
+      try {
+        const elevs = await fetchElevationsCached(
+          targets.map(w => ({ lat: w.lat, lng: w.lng })),
+          { force }
+        );
+        const byId = {};
+        targets.forEach((w, i) => {
+          const e = elevs[i];
+          byId[w.id] = typeof e === 'number' ? Math.round(e) : null;
+        });
+        setWaypoints(prev => {
+          const updated = prev.map(w =>
+            w.id in byId
+              ? { ...w, elevation: byId[w.id], elevationUnit: 'ft' }
+              : w
+          );
+          window.storage?.set(storageKey, updated).catch(() => {});
+          return updated;
+        });
+        setElevStatus('done');
+      } catch (err) {
+        setElevStatus('error');
+        setElevError(err.message);
+      } finally {
+        elevFetchingRef.current = false;
+      }
+    },
+    [storageKey]
+  );
+
+  // Auto-fetch elevation for any waypoints that don't have it yet.
+  useEffect(() => {
+    if (loading) return;
+    if (!elevationEnabled) {
+      setElevStatus('nokey');
+      return;
+    }
+    const missing = waypoints.filter(w => w.elevation === undefined);
+    if (missing.length > 0) runElevationFetch(missing);
+    else setElevStatus(s => (s === 'loading' ? 'done' : s));
+  }, [waypoints, loading, elevationEnabled, runElevationFetch]);
+
+  // Manual refresh — force a re-fetch for every waypoint (bypasses the cache).
+  const refreshElevations = () => {
+    if (waypoints.length) runElevationFetch(waypoints, true);
+  };
+
+  // ── GPX import ────────────────────────────────────────────────
+  const gpxInputRef = useRef(null);
+  const [importMsg, setImportMsg] = useState(null); // { type: 'ok'|'error', text }
+
+  const handleGpxFile = async e => {
+    const file = e.target.files?.[0];
+    // Reset the input so selecting the same file again still fires onChange.
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = parseGPX(text);
+      const imported = parsed.map(wp => ({
+        id: Date.now().toString() + Math.random().toString(36).slice(2),
+        ...wp,
+      }));
+      saveWaypoints([...waypoints, ...imported]);
+      setImportMsg({
+        type: 'ok',
+        text: `Imported ${imported.length} waypoint${imported.length === 1 ? '' : 's'} from ${file.name}.`,
+      });
+    } catch (err) {
+      setImportMsg({ type: 'error', text: err.message });
     }
   };
 
@@ -1629,6 +1431,7 @@ function WaypointsPanel({ unit }) {
       notes: waypoint.notes || '',
     });
     setEditingId(waypoint.id);
+    setFormOpen(true); // always reveal the form when editing
   };
 
   const handleDelete = id => {
@@ -1796,15 +1599,46 @@ function WaypointsPanel({ unit }) {
             saved per unit and persist across sessions.
           </p>
         </div>
-        {waypoints.length === 0 && (
-          <div
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+            gap: 10,
+            paddingTop: 12,
+            borderTop: `1px solid ${C.border}`,
+          }}
+        >
+          <input
+            ref={gpxInputRef}
+            type="file"
+            accept=".gpx,application/gpx+xml,application/xml,text/xml"
+            onChange={handleGpxFile}
+            style={{ display: 'none' }}
+            aria-hidden="true"
+          />
+          <button
+            onClick={() => gpxInputRef.current?.click()}
             style={{
               display: 'flex',
-              justifyContent: 'center',
-              paddingTop: 8,
-              borderTop: `1px solid ${C.border}`,
+              alignItems: 'center',
+              gap: 6,
+              padding: '8px 16px',
+              background: C.surface,
+              color: C.green,
+              border: `1px solid ${C.green}44`,
+              borderRadius: 6,
+              fontFamily: "'Oswald', sans-serif",
+              fontSize: 13,
+              cursor: 'pointer',
+              letterSpacing: '0.05em',
             }}
+            aria-label="Import waypoints from a GPX file"
           >
+            <Upload size={14} aria-hidden="true" />
+            Import GPX
+          </button>
+          {waypoints.length === 0 && (
             <button
               onClick={addSampleWaypoints}
               style={{
@@ -1825,6 +1659,30 @@ function WaypointsPanel({ unit }) {
               <Lightbulb size={14} />
               Add Sample Waypoints to See Markers
             </button>
+          )}
+        </div>
+        {importMsg && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              marginTop: 12,
+              padding: '8px 12px',
+              borderRadius: 6,
+              fontSize: 12.5,
+              background:
+                importMsg.type === 'ok' ? `${C.green}18` : `${C.red}18`,
+              border: `1px solid ${importMsg.type === 'ok' ? C.green : C.red}44`,
+              color: importMsg.type === 'ok' ? C.greenLight : C.red,
+            }}
+          >
+            {importMsg.type === 'ok' ? (
+              <Check size={14} aria-hidden="true" />
+            ) : (
+              <AlertTriangle size={14} aria-hidden="true" />
+            )}
+            {importMsg.text}
           </div>
         )}
       </Card>
@@ -1901,6 +1759,75 @@ function WaypointsPanel({ unit }) {
           </span>
         </div>
 
+        {/* Elevation status / refresh (TessaDEM) */}
+        {waypoints.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 8,
+              flexWrap: 'wrap',
+              padding: '7px 12px',
+              background: C.surface,
+              borderRadius: 6,
+              marginBottom: 12,
+              border: `1px solid ${C.border}`,
+            }}
+          >
+            <span
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 11,
+                fontFamily: "'IBM Plex Mono', monospace",
+                color: C.textSub,
+              }}
+            >
+              <Mountain
+                size={13}
+                style={{ color: C.greenLight, flexShrink: 0 }}
+                aria-hidden="true"
+              />
+              {!elevationEnabled ? (
+                'Elevation: set VITE_TESSADEM_API_KEY to enable'
+              ) : elevStatus === 'loading' ? (
+                'Fetching elevation from TessaDEM…'
+              ) : elevStatus === 'error' ? (
+                <span style={{ color: C.red }}>
+                  Elevation error: {elevError}
+                </span>
+              ) : (
+                'Waypoint elevation via TessaDEM'
+              )}
+            </span>
+            {elevationEnabled && (
+              <button
+                onClick={refreshElevations}
+                disabled={elevStatus === 'loading'}
+                aria-label="Refresh waypoint elevations"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  padding: '5px 10px',
+                  background: 'transparent',
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 6,
+                  color: elevStatus === 'loading' ? C.textMuted : C.greenLight,
+                  fontSize: 11,
+                  fontFamily: "'IBM Plex Mono', monospace",
+                  cursor: elevStatus === 'loading' ? 'not-allowed' : 'pointer',
+                }}
+              >
+                <RefreshCw size={12} aria-hidden="true" />
+                {elevStatus === 'loading' ? 'Fetching…' : 'Refresh'}
+              </button>
+            )}
+          </div>
+        )}
+
         <div
           style={{
             borderRadius: 8,
@@ -1947,6 +1874,26 @@ function WaypointsPanel({ unit }) {
                         style={{ fontSize: 11, color: '#666', marginBottom: 4 }}
                       >
                         {wp.lat.toFixed(5)}, {wp.lng.toFixed(5)}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: '#2a6a3a',
+                          marginBottom: 4,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                      >
+                        ⛰{' '}
+                        {typeof wp.elevation === 'number'
+                          ? `${wp.elevation.toLocaleString()} ft`
+                          : wp.elevation === null
+                            ? 'Elevation n/a'
+                            : elevStatus === 'loading'
+                              ? 'Fetching elevation…'
+                              : 'Elevation —'}
                       </div>
                       <div
                         style={{
@@ -2021,238 +1968,281 @@ function WaypointsPanel({ unit }) {
         </p>
       </Card>
 
-      {/* Add/Edit Waypoint Form */}
+      {/* Add/Edit Waypoint Form (collapsible, collapsed by default) */}
       <Card>
-        <SectionLabel>
-          {editingId ? 'Edit Waypoint' : 'Add New Waypoint'}
-        </SectionLabel>
-        <div
-          style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}
-        >
-          <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: 11,
-                color: C.textMuted,
-                marginBottom: 4,
-                fontFamily: "'IBM Plex Mono', monospace",
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-              }}
-            >
-              Name *
-            </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={e => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g., Base Camp, Elk Creek"
-              style={{
-                width: '100%',
-                padding: '8px 10px',
-                background: C.surface,
-                border: `1px solid ${C.border}`,
-                borderRadius: 6,
-                color: C.text,
-                fontSize: 13,
-                fontFamily: "'Source Serif 4', Georgia, serif",
-              }}
-            />
-          </div>
-          <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: 11,
-                color: C.textMuted,
-                marginBottom: 4,
-                fontFamily: "'IBM Plex Mono', monospace",
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-              }}
-            >
-              Category *
-            </label>
-            <select
-              value={formData.category}
-              onChange={e =>
-                setFormData({ ...formData, category: e.target.value })
-              }
-              style={{
-                width: '100%',
-                padding: '8px 10px',
-                background: C.surface,
-                border: `1px solid ${C.border}`,
-                borderRadius: 6,
-                color: C.text,
-                fontSize: 13,
-              }}
-            >
-              {Object.entries(WAYPOINT_CATEGORIES).map(([key, cat]) => (
-                <option key={key} value={key}>
-                  {cat.icon} {cat.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: 11,
-                color: C.textMuted,
-                marginBottom: 4,
-                fontFamily: "'IBM Plex Mono', monospace",
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-              }}
-            >
-              Latitude *
-            </label>
-            <input
-              type="number"
-              step="0.0001"
-              value={formData.lat}
-              onChange={e => setFormData({ ...formData, lat: e.target.value })}
-              placeholder="e.g., 40.1234"
-              style={{
-                width: '100%',
-                padding: '8px 10px',
-                background: C.surface,
-                border: `1px solid ${C.border}`,
-                borderRadius: 6,
-                color: C.text,
-                fontSize: 13,
-                fontFamily: "'IBM Plex Mono', monospace",
-              }}
-            />
-          </div>
-          <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: 11,
-                color: C.textMuted,
-                marginBottom: 4,
-                fontFamily: "'IBM Plex Mono', monospace",
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-              }}
-            >
-              Longitude *
-            </label>
-            <input
-              type="number"
-              step="0.0001"
-              value={formData.lng}
-              onChange={e => setFormData({ ...formData, lng: e.target.value })}
-              placeholder="e.g., -107.5678"
-              style={{
-                width: '100%',
-                padding: '8px 10px',
-                background: C.surface,
-                border: `1px solid ${C.border}`,
-                borderRadius: 6,
-                color: C.text,
-                fontSize: 13,
-                fontFamily: "'IBM Plex Mono', monospace",
-              }}
-            />
-          </div>
-        </div>
-        <div style={{ marginTop: 12 }}>
-          <label
-            style={{
-              display: 'block',
-              fontSize: 11,
-              color: C.textMuted,
-              marginBottom: 4,
-              fontFamily: "'IBM Plex Mono', monospace",
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}
-          >
-            Notes (Optional)
-          </label>
-          <textarea
-            value={formData.notes}
-            onChange={e => setFormData({ ...formData, notes: e.target.value })}
-            placeholder="Description, directions, observations..."
-            rows={2}
-            style={{
-              width: '100%',
-              padding: '8px 10px',
-              background: C.surface,
-              border: `1px solid ${C.border}`,
-              borderRadius: 6,
-              color: C.text,
-              fontSize: 13,
-              fontFamily: "'Source Serif 4', Georgia, serif",
-              resize: 'vertical',
-            }}
-          />
-        </div>
-        <div
+        <button
+          onClick={() => setFormOpen(o => !o)}
+          aria-expanded={formOpen}
           style={{
             display: 'flex',
+            alignItems: 'center',
             gap: 8,
-            marginTop: 12,
-            justifyContent: 'flex-end',
+            width: '100%',
+            padding: 0,
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            color: C.textMuted,
           }}
         >
-          {editingId && (
-            <button
-              onClick={handleCancelEdit}
+          <ChevronRight
+            size={14}
+            style={{
+              transform: formOpen ? 'rotate(90deg)' : 'none',
+              transition: 'transform 0.15s',
+              flexShrink: 0,
+            }}
+            aria-hidden="true"
+          />
+          <SectionLabel style={{ margin: 0 }}>
+            {editingId ? 'Edit Waypoint' : 'Add New Waypoint'}
+          </SectionLabel>
+        </button>
+        {formOpen && (
+          <div style={{ marginTop: 14 }}>
+            <div
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '8px 16px',
-                background: C.surface,
-                color: C.text,
-                border: `1px solid ${C.border}`,
-                borderRadius: 6,
-                fontFamily: "'Oswald', sans-serif",
-                fontSize: 13,
-                cursor: 'pointer',
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 12,
               }}
             >
-              <X size={14} />
-              Cancel
-            </button>
-          )}
-          <button
-            onClick={handleAddWaypoint}
-            disabled={!formData.name.trim() || !formData.lat || !formData.lng}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '8px 16px',
-              background: editingId ? C.green : C.accent,
-              color: C.bg,
-              border: 'none',
-              borderRadius: 6,
-              fontFamily: "'Oswald', sans-serif",
-              fontSize: 13,
-              cursor: formData.name.trim() ? 'pointer' : 'not-allowed',
-              opacity: formData.name.trim() ? 1 : 0.5,
-            }}
-          >
-            {editingId ? (
-              <>
-                <Save size={14} />
-                Update
-              </>
-            ) : (
-              <>
-                <Plus size={14} />
-                Add Waypoint
-              </>
-            )}
-          </button>
-        </div>
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: 11,
+                    color: C.textMuted,
+                    marginBottom: 4,
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={e =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  placeholder="e.g., Base Camp, Elk Creek"
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    background: C.surface,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 6,
+                    color: C.text,
+                    fontSize: 13,
+                    fontFamily: "'Source Serif 4', Georgia, serif",
+                  }}
+                />
+              </div>
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: 11,
+                    color: C.textMuted,
+                    marginBottom: 4,
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  Category *
+                </label>
+                <select
+                  value={formData.category}
+                  onChange={e =>
+                    setFormData({ ...formData, category: e.target.value })
+                  }
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    background: C.surface,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 6,
+                    color: C.text,
+                    fontSize: 13,
+                  }}
+                >
+                  {Object.entries(WAYPOINT_CATEGORIES).map(([key, cat]) => (
+                    <option key={key} value={key}>
+                      {cat.icon} {cat.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: 11,
+                    color: C.textMuted,
+                    marginBottom: 4,
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  Latitude *
+                </label>
+                <input
+                  type="number"
+                  step="0.0001"
+                  value={formData.lat}
+                  onChange={e =>
+                    setFormData({ ...formData, lat: e.target.value })
+                  }
+                  placeholder="e.g., 40.1234"
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    background: C.surface,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 6,
+                    color: C.text,
+                    fontSize: 13,
+                    fontFamily: "'IBM Plex Mono', monospace",
+                  }}
+                />
+              </div>
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: 11,
+                    color: C.textMuted,
+                    marginBottom: 4,
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  Longitude *
+                </label>
+                <input
+                  type="number"
+                  step="0.0001"
+                  value={formData.lng}
+                  onChange={e =>
+                    setFormData({ ...formData, lng: e.target.value })
+                  }
+                  placeholder="e.g., -107.5678"
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    background: C.surface,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 6,
+                    color: C.text,
+                    fontSize: 13,
+                    fontFamily: "'IBM Plex Mono', monospace",
+                  }}
+                />
+              </div>
+            </div>
+            <div style={{ marginTop: 12 }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: 11,
+                  color: C.textMuted,
+                  marginBottom: 4,
+                  fontFamily: "'IBM Plex Mono', monospace",
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                Notes (Optional)
+              </label>
+              <textarea
+                value={formData.notes}
+                onChange={e =>
+                  setFormData({ ...formData, notes: e.target.value })
+                }
+                placeholder="Description, directions, observations..."
+                rows={2}
+                style={{
+                  width: '100%',
+                  padding: '8px 10px',
+                  background: C.surface,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 6,
+                  color: C.text,
+                  fontSize: 13,
+                  fontFamily: "'Source Serif 4', Georgia, serif",
+                  resize: 'vertical',
+                }}
+              />
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                gap: 8,
+                marginTop: 12,
+                justifyContent: 'flex-end',
+              }}
+            >
+              {editingId && (
+                <button
+                  onClick={handleCancelEdit}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '8px 16px',
+                    background: C.surface,
+                    color: C.text,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 6,
+                    fontFamily: "'Oswald', sans-serif",
+                    fontSize: 13,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <X size={14} />
+                  Cancel
+                </button>
+              )}
+              <button
+                onClick={handleAddWaypoint}
+                disabled={
+                  !formData.name.trim() || !formData.lat || !formData.lng
+                }
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '8px 16px',
+                  background: editingId ? C.green : C.accent,
+                  color: C.bg,
+                  border: 'none',
+                  borderRadius: 6,
+                  fontFamily: "'Oswald', sans-serif",
+                  fontSize: 13,
+                  cursor: formData.name.trim() ? 'pointer' : 'not-allowed',
+                  opacity: formData.name.trim() ? 1 : 0.5,
+                }}
+              >
+                {editingId ? (
+                  <>
+                    <Save size={14} />
+                    Update
+                  </>
+                ) : (
+                  <>
+                    <Plus size={14} />
+                    Add Waypoint
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Waypoints List */}
@@ -2299,9 +2289,28 @@ function WaypointsPanel({ unit }) {
                         color: C.textMuted,
                         fontFamily: "'IBM Plex Mono', monospace",
                         marginBottom: 4,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        flexWrap: 'wrap',
                       }}
                     >
-                      {wp.lat.toFixed(5)}°N, {Math.abs(wp.lng).toFixed(5)}°W
+                      <span>
+                        {wp.lat.toFixed(5)}°N, {Math.abs(wp.lng).toFixed(5)}°W
+                      </span>
+                      {typeof wp.elevation === 'number' && (
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            color: C.greenLight,
+                          }}
+                        >
+                          <Mountain size={11} aria-hidden="true" />
+                          {wp.elevation.toLocaleString()} ft
+                        </span>
+                      )}
                     </div>
                     {wp.notes && (
                       <p
@@ -3831,18 +3840,6 @@ function HuntPlanPanel({ unit }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// MISC PANEL — draw odds and other reference data
-// ═══════════════════════════════════════════════════════════════
-function MiscPanel({ unit }) {
-  return (
-    <>
-      <DrawOddsPanel unit={unit} />
-      <NotesSection unitId={unit.id} />
-    </>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════
 // PERSISTENT NOTES
 // ═══════════════════════════════════════════════════════════════
 function NotesSection({ unitId }) {
@@ -4090,6 +4087,15 @@ function ElkHuntDashboardInner() {
           /* Compact padding on small screens */
           .content-padding {
             padding: 12px !important;
+          }
+
+          /* Collapse multi-column inline grids to a single column.
+             Targets 2-col and 3-col grids; leaves wide chart grids
+             (e.g. repeat(35, 1fr)) scrollable. */
+          .main-content div[style*="1fr 1fr"],
+          .main-content div[style*="repeat(3, 1fr)"],
+          .main-content div[style*="repeat(2, 1fr)"] {
+            grid-template-columns: 1fr !important;
           }
         }
       `}</style>
@@ -4626,7 +4632,6 @@ function ElkHuntDashboardInner() {
                   {activeTab === id && (
                     <>
                       {id === 'overview' && <OverviewPanel unit={unit} />}
-                      {id === 'terrain' && <TerrainPanel unit={unit} />}
                       {id === 'access' && <AccessPanel unit={unit} />}
                       {id === 'directions' && <DirectionsPanel unit={unit} />}
                       {id === 'lodging' && <LodgingPanel unit={unit} />}
@@ -4639,14 +4644,14 @@ function ElkHuntDashboardInner() {
                           <GearList />
                         </FeatureGate>
                       )}
+                      {id === 'routesim' && <RouteThermalSimulator />}
                       {id === 'integrations' && <IntegrationsPanel />}
                       {id === 'huntplan' && <HuntPlanPanel unit={unit} />}
-                      {id === 'misc' && <MiscPanel unit={unit} />}
                       {id !== 'integrations' &&
                         id !== 'waypoints' &&
                         id !== 'gear' &&
-                        id !== 'huntplan' &&
-                        id !== 'misc' && (
+                        id !== 'routesim' &&
+                        id !== 'huntplan' && (
                           <>
                             <NavigationPanel unit={unit} />
                             <SightingsPanel unit={unit} />

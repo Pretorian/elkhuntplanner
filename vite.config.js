@@ -27,6 +27,7 @@ export default defineConfig({
           react: ['react', 'react-dom'],
           leaflet: ['leaflet', 'react-leaflet'],
           icons: ['lucide-react'],
+          charts: ['recharts'],
         },
       },
     },

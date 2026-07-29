@@ -43,6 +43,7 @@ export default [
         alert: 'readonly',
         globalThis: 'readonly',
         Blob: 'readonly',
+        DOMParser: 'readonly',
       },
     },
     settings: {
