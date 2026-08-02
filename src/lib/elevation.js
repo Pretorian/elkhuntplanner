@@ -60,7 +60,9 @@ export const getCachedElevation = (lat, lng) => {
 
 // Separate cache for area-mode elevation grids (relief map), keyed by
 // bbox + grid dimensions so a unit's relief is only fetched once.
-const GRID_CACHE_KEY = 'elk-elevation-grid-v1';
+// v2: corner order fixed to SW|NE — invalidates any grid cached by the
+// earlier (incorrect NW|SE) request so users get a correct fetch.
+const GRID_CACHE_KEY = 'elk-elevation-grid-v2';
 let _gridCache = null;
 const readGridCache = () => {
   if (_gridCache) return _gridCache;
@@ -228,13 +230,14 @@ export async function fetchElevationGrid(
   const cache = readGridCache();
   if (!force && cache[cacheKey]) return cache[cacheKey];
 
-  // Area extent given as opposite corners (NW | SE).
+  // TessaDEM area mode expects the SOUTHWEST corner first, then the
+  // NORTHEAST corner: `lat_sw,lng_sw|lat_ne,lng_ne` (latitude,longitude).
   const locations =
-    `${north.toFixed(6)},${west.toFixed(6)}` +
-    `|${south.toFixed(6)},${east.toFixed(6)}`;
+    `${south.toFixed(6)},${west.toFixed(6)}` +
+    `|${north.toFixed(6)},${east.toFixed(6)}`;
   const url =
     `${API_BASE}?key=${encodeURIComponent(key)}` +
-    `&mode=area&unit=${encodeURIComponent(unit)}` +
+    `&mode=area&format=json&unit=${encodeURIComponent(unit)}` +
     `&rows=${rows}&columns=${cols}` +
     `&locations=${encodeURIComponent(locations)}`;
 

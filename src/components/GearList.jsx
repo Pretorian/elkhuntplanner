@@ -10,10 +10,11 @@ import {
   Lightbulb,
   ChevronDown,
   ChevronRight,
-  ShoppingCart,
   Star,
   Award,
   Image as ImageIcon,
+  ExternalLink,
+  Scale,
 } from 'lucide-react';
 import { storage } from '../storage';
 import acquiredManifest from '../../assets/acquired-gear.json';
@@ -30,15 +31,90 @@ const manifestLookup = () => {
   return map;
 };
 
-// Ensure every item has owned/image fields, seeding missing values from the
-// committed manifest (by name+category). Explicit values already on an item
-// (e.g. a user's saved choice) are always kept — the manifest only fills gaps.
+// Suggested "optimal" weights (ounces) for common items, keyed by normalized
+// item name. Used to prefill the tracking list; every value stays editable.
+const WEIGHT_LOOKUP = {
+  'treking poles': 16,
+  'sit pad': 3,
+  'bino harness': 6,
+  binos: 28,
+  'bear spray': 10,
+  'game calls': 3,
+  'range finder': 6,
+  'multi-tool / knife (gerber dime)': 2,
+  'ferro rod': 1,
+  'wind detector': 0.5,
+  'in reach garmin gps': 3.5,
+  'allen key set': 2,
+  'lens wipe': 0.2,
+  'small lighter': 0.5,
+  'fire starter': 1,
+  'ul backup headlamp': 1.5,
+  'jet boil stove and fuel': 15,
+  'water filtration solution': 3,
+  'bow & arrows': 64,
+  'water and bladder / water bottle': 6,
+  'head lamp': 3,
+  'power bank and cords': 8,
+  tripod: 32,
+  '1l soft bottle': 1.5,
+  'wind proof matches': 1,
+  'bugle tube': 3,
+  'sunscreen / balm': 1,
+  chapstick: 0.3,
+  'fixed blade knife': 5,
+  'battery bank usb-c usb-mini': 8,
+  spork: 0.5,
+  'tent small + foot print': 40,
+  'tent large + foot print': 80,
+  'apex pant': 12,
+  'ascent pant': 12,
+  socks: 2,
+  underwear: 2,
+  'puffy jacket': 16,
+  'wind breaker jacket': 8,
+  'fleece jacket': 12,
+  'base layer x3': 18,
+  boots: 32,
+  hat: 3,
+  'gloves x2': 4,
+  belt: 4,
+  crocs: 8,
+  knife: 3,
+  saw: 5,
+  'game bags': 6,
+  tourniquet: 2,
+  'quick clot': 1,
+  'trauma blanket': 3,
+  'signal mirror': 1,
+  paracord: 3,
+  tarp: 12,
+  'tarp 8x10': 16,
+  rope: 8,
+  'solar panel and charging cables': 12,
+  'large power bank': 12,
+  'buddy heater': 40,
+  lantern: 8,
+  'headlamp backup': 2,
+  axe: 32,
+  'spotting scope': 40,
+  'folding chair': 32,
+  'sleeping bag': 40,
+  quilt: 20,
+  'sleeping pad': 16,
+  'water containers': 32,
+};
+
+// Ensure every item has owned/image/weight fields, seeding missing values from
+// the committed manifest (owned/image, by name+category) and the weight lookup
+// (by name). Explicit values already on an item are always kept.
 const applyManifest = data => {
   const lookup = manifestLookup();
   const result = {};
   Object.entries(data).forEach(([category, items]) => {
     result[category] = items.map(item => {
       const seed = lookup[`${normKey(item.name)}|${normKey(category)}`];
+      const seededWeight = WEIGHT_LOOKUP[normKey(item.name)];
       return {
         ...item,
         owned:
@@ -49,10 +125,198 @@ const applyManifest = data => {
             : seed && seed.image
               ? seed.image
               : null,
+        weight:
+          item.weight !== undefined
+            ? item.weight
+            : seededWeight !== undefined
+              ? seededWeight
+              : null,
       };
     });
   });
   return result;
+};
+
+// Curated "Buy Once, Cry Once" picks for the GMU 79 hunt, grouped by category.
+// Each item links to a product search so it can be bought. `q` = search query.
+const CRY_ONCE_PICKS = [
+  {
+    group: 'Pack & Trekking',
+    items: [
+      {
+        name: 'Exo Mountain Gear K4 5000',
+        why: 'Hauls 100+ lb elk quarters in comfort',
+        q: 'Exo Mountain Gear K4 5000 backpack',
+      },
+      {
+        name: 'Stone Glacier Sky 5900',
+        why: 'Ultralight frame, heavy-load capable',
+        q: 'Stone Glacier Sky 5900 backpack',
+      },
+      {
+        name: 'Black Diamond Alpine Carbon Cork',
+        why: 'Saves knees on 40% slopes + packouts',
+        q: 'Black Diamond Alpine Carbon Cork trekking poles',
+      },
+    ],
+  },
+  {
+    group: 'Optics',
+    items: [
+      {
+        name: 'Swarovski NL Pure 10x42',
+        why: 'Best-in-class western glassing',
+        q: 'Swarovski NL Pure 10x42 binoculars',
+      },
+      {
+        name: 'Vortex Razor UHD 10x42',
+        why: 'Premium glass at half the price',
+        q: 'Vortex Razor UHD 10x42 binoculars',
+      },
+      {
+        name: 'Marsupial Enclosed Bino Harness',
+        why: 'Silent magnetic one-hand access',
+        q: 'Marsupial Gear enclosed bino harness',
+      },
+    ],
+  },
+  {
+    group: 'Rangefinder',
+    items: [
+      {
+        name: 'Leupold RX-Fulldraw 5',
+        why: 'Archery angle-comp for steep shots',
+        q: 'Leupold RX-Fulldraw 5 rangefinder',
+      },
+      {
+        name: 'Sig Sauer KILO4K',
+        why: 'Fast, precise, excellent low light',
+        q: 'Sig Sauer KILO4K rangefinder',
+      },
+    ],
+  },
+  {
+    group: 'Water',
+    items: [
+      {
+        name: 'Katadyn BeFree 1L',
+        why: 'Instant flow from alpine seeps',
+        q: 'Katadyn BeFree 1L water filter',
+      },
+      {
+        name: 'Sawyer Squeeze',
+        why: 'Reliable, lightweight backup',
+        q: 'Sawyer Squeeze water filter',
+      },
+    ],
+  },
+  {
+    group: 'Navigation & Safety',
+    items: [
+      {
+        name: 'Garmin inReach Mini 2',
+        why: 'Solo remote SOS + check-ins',
+        q: 'Garmin inReach Mini 2',
+      },
+      {
+        name: 'onX Hunt (offline maps)',
+        why: 'Benches, escape routes, boundaries',
+        q: 'onX Hunt app subscription',
+      },
+      {
+        name: 'Counter Assault Bear Spray',
+        why: 'Longest range EPA-approved spray',
+        q: 'Counter Assault bear spray 10.2 oz',
+      },
+      {
+        name: 'North American Rescue CAT Gen 7',
+        why: 'Real tourniquet, not a knockoff',
+        q: 'North American Rescue CAT Gen 7 tourniquet',
+      },
+      {
+        name: 'QuikClot Hemostatic Gauze',
+        why: 'Fast severe-bleed control',
+        q: 'QuikClot hemostatic gauze',
+      },
+    ],
+  },
+  {
+    group: 'Kill Kit',
+    items: [
+      {
+        name: 'Argali Field Kit',
+        why: 'Knife + game bags + cord in one',
+        q: 'Argali field kit game bags',
+      },
+      {
+        name: 'Iron Will Knife',
+        why: 'Holds edge through a whole elk',
+        q: 'Iron Will Outfitters skinning knife',
+      },
+      {
+        name: 'Havalon Piranta',
+        why: 'Replaceable-blade precision',
+        q: 'Havalon Piranta knife',
+      },
+    ],
+  },
+  {
+    group: 'Clothing & Footwear',
+    items: [
+      {
+        name: 'First Lite / Kuiu Merino Base',
+        why: 'Odor control + warmth on the climb',
+        q: 'First Lite merino base layer',
+      },
+      {
+        name: 'Kuiu Super Down LT Puffy',
+        why: 'Packs small, cold-morning insurance',
+        q: 'Kuiu Super Down LT jacket',
+      },
+      {
+        name: 'Crispi Nevada GTX',
+        why: 'Stiff shank for steep packouts',
+        q: 'Crispi Nevada GTX boots',
+      },
+      {
+        name: 'Kenetrek Mountain Extreme',
+        why: 'Bomber support + durability',
+        q: 'Kenetrek Mountain Extreme boots',
+      },
+    ],
+  },
+  {
+    group: 'Recovery & Nutrition',
+    items: [
+      {
+        name: 'MTN OPS Ignite',
+        why: 'Altitude hydration + energy',
+        q: 'MTN OPS Ignite drink mix',
+      },
+      {
+        name: 'Liquid IV',
+        why: 'Fast electrolyte recovery',
+        q: 'Liquid IV hydration multiplier',
+      },
+      {
+        name: 'Leukotape',
+        why: 'Bombproof blister prevention',
+        q: 'Leukotape P blister tape',
+      },
+    ],
+  },
+];
+
+const buyLink = q =>
+  `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(q)}`;
+
+// Format ounces as a compact weight string (lb + oz once ≥ 1 lb).
+const fmtWeight = oz => {
+  if (!oz) return '0 oz';
+  if (oz < 16) return `${Math.round(oz * 10) / 10} oz`;
+  const lb = Math.floor(oz / 16);
+  const rem = Math.round(oz - lb * 16);
+  return rem ? `${lb} lb ${rem} oz` : `${lb} lb`;
 };
 
 // Design tokens - matching the main app
@@ -74,208 +338,6 @@ const C = {
   amber: '#c4961a',
   red: '#c04a38',
   white: '#ffffff',
-};
-
-// Top-rated gear recommendations from "Buy Once, Cry Once"
-const RECOMMENDED_GEAR = {
-  'Pack / In the field': [
-    {
-      name: 'Exo Mountain Gear K4 5000',
-      category: 'Backpack',
-      why: 'Incredibly lightweight but capable of hauling 100+ lbs of elk meat without breaking your back. Known for comfort.',
-      searchTerms: 'Exo Mountain Gear K4 5000 backpack',
-    },
-    {
-      name: 'Stone Glacier Sky 5900',
-      category: 'Backpack',
-      why: 'Ultra-light durability, perfect for hauling heavy loads.',
-      searchTerms: 'Stone Glacier Sky 5900 backpack',
-    },
-    {
-      name: 'Black Diamond Alpine Carbon Cork',
-      category: 'Trekking Poles',
-      why: 'Carbon fiber keeps them light, cork grips prevent blisters during steep climbs.',
-      searchTerms: 'Black Diamond Alpine Carbon Cork trekking poles',
-    },
-    {
-      name: 'Katadyn BeFree 1L',
-      category: 'Water Filtration',
-      why: 'Superior flow rate, drink directly from the soft flask or squeeze into bladder.',
-      searchTerms: 'Katadyn BeFree 1L water filter',
-    },
-    {
-      name: 'Sawyer Squeeze',
-      category: 'Water Filtration',
-      why: 'Reliable and lightweight water filtration system.',
-      searchTerms: 'Sawyer Squeeze water filter',
-    },
-    {
-      name: 'Leupold RX-Fulldraw 5',
-      category: 'Range Finder',
-      why: 'Built for archers, uses arrow weight and velocity for exact cut-charts on steep angles.',
-      searchTerms: 'Leupold RX-Fulldraw 5 rangefinder',
-    },
-    {
-      name: 'Sig Sauer KILO4K',
-      category: 'Range Finder',
-      why: 'Premium rangefinder with excellent optics and precision.',
-      searchTerms: 'Sig Sauer KILO4K rangefinder',
-    },
-    {
-      name: 'Counter Assault Bear Deterrent (10.2 oz)',
-      category: 'Bear Spray',
-      why: 'Shoots furthest (40 feet) and lasts longest (8 seconds) of any EPA-approved spray.',
-      searchTerms: 'Counter Assault Bear Deterrent 10.2 oz',
-    },
-    {
-      name: 'Leatherman Charge+ TTi',
-      category: 'Multi-Tool',
-      why: 'Titanium handle, premium S30V steel knife, and gut hook for field dressing.',
-      searchTerms: 'Leatherman Charge+ TTi multi-tool',
-    },
-  ],
-  'Bino Harness': [
-    {
-      name: 'Swarovski NL Pure 10x42',
-      category: 'Binos',
-      why: 'Undisputed king of western glassing with superior optics.',
-      searchTerms: 'Swarovski NL Pure 10x42 binoculars',
-    },
-    {
-      name: 'Vortex Razor UHD',
-      category: 'Binos',
-      why: 'Premium optics at half the price of Swarovski.',
-      searchTerms: 'Vortex Razor UHD binoculars',
-    },
-    {
-      name: 'Marsupial Gear Enclosed Bino Harness',
-      category: 'Bino Harness',
-      why: 'Magnetic closure for one-handed, dead-silent operation while keeping dust and rain out.',
-      searchTerms: 'Marsupial Gear Enclosed Bino Harness',
-    },
-  ],
-  Clothes: [
-    {
-      name: 'Sitka Mountain Pant',
-      category: 'Pants',
-      why: 'Highly rated hunting pant with great durability and comfort.',
-      searchTerms: 'Sitka Mountain Pant hunting',
-    },
-    {
-      name: 'Kuiu Attack Pant',
-      category: 'Pants',
-      why: 'Most highly rated hunting pant with zip vents and brush durability.',
-      searchTerms: 'Kuiu Attack Pant hunting',
-    },
-    {
-      name: 'Kuiu Super Down LT',
-      category: 'Puffy Jacket',
-      why: 'Water-resistant down, incredibly light, packs down to grapefruit size.',
-      searchTerms: 'Kuiu Super Down LT jacket',
-    },
-    {
-      name: 'First Lite Uncompahgre',
-      category: 'Puffy Jacket',
-      why: 'Premium insulated jacket for cold weather hunting.',
-      searchTerms: 'First Lite Uncompahgre puffy jacket',
-    },
-    {
-      name: 'Crispi Nevada GTX',
-      category: 'Boots',
-      why: 'Stiff shanks prevent foot fatigue on steep mountainsides with heavy loads.',
-      searchTerms: 'Crispi Nevada GTX boots',
-    },
-    {
-      name: 'Kenetrek Mountain Extreme',
-      category: 'Boots',
-      why: 'Built for elk hunting with superior support and durability.',
-      searchTerms: 'Kenetrek Mountain Extreme boots',
-    },
-  ],
-  'Kill Kit': [
-    {
-      name: 'Iron Will Outfitters Skinning Knife',
-      category: 'Fixed Blade Knife',
-      why: 'Holds an edge through an entire elk without sharpening.',
-      searchTerms: 'Iron Will Outfitters Skinning Knife',
-    },
-    {
-      name: 'Havalon Piranta',
-      category: 'Skinning Knife',
-      why: 'Industry standard for surgical precision with replaceable blades.',
-      searchTerms: 'Havalon Piranta knife',
-    },
-    {
-      name: 'Argali High Country Pack',
-      category: 'Game Bags',
-      why: 'Ultra-light, breathable, synthetic bags that reflect light at night.',
-      searchTerms: 'Argali High Country game bags',
-    },
-    {
-      name: 'Caribou Gear Game Bags',
-      category: 'Game Bags',
-      why: 'High-quality game bags trusted by hunters.',
-      searchTerms: 'Caribou Gear game bags',
-    },
-  ],
-  'First Aid': [
-    {
-      name: 'North American Rescue C-A-T Gen 7',
-      category: 'Tourniquet',
-      why: 'Official tourniquet of the US Military. Do not buy knock-offs on Amazon.',
-      searchTerms: 'North American Rescue CAT Gen 7 tourniquet',
-    },
-  ],
-  Camp: [
-    {
-      name: 'Stone Glacier Skyscraper 2P',
-      category: 'Tent',
-      why: '4-season bomb shelter for severe winds and snow.',
-      searchTerms: 'Stone Glacier Skyscraper 2P tent',
-    },
-    {
-      name: 'Big Agnes Copper Spur UL2',
-      category: 'Tent',
-      why: 'Significantly lighter for early September archery season.',
-      searchTerms: 'Big Agnes Copper Spur UL2 tent',
-    },
-    {
-      name: 'Enlightened Equipment Revelation Quilt (10° or 20°)',
-      category: 'Sleeping Bag/Quilt',
-      why: 'Quilts save weight and space. EE makes the best custom quilts.',
-      searchTerms: 'Enlightened Equipment Revelation Quilt',
-    },
-    {
-      name: 'Western Mountaineering Alpinlite',
-      category: 'Sleeping Bag',
-      why: 'Premium sleeping bag for cold weather.',
-      searchTerms: 'Western Mountaineering Alpinlite sleeping bag',
-    },
-    {
-      name: 'Therm-a-Rest NeoAir XTherm NXT',
-      category: 'Sleeping Pad',
-      why: 'R-Value of 7.3, incredibly warm, only 16 ounces. Fixed the crinkly noise.',
-      searchTerms: 'Therm-a-Rest NeoAir XTherm NXT',
-    },
-    {
-      name: 'Jetboil MiniMo',
-      category: 'Jet Boil Stove',
-      why: 'Wider, shallower cup for easier eating and better simmer control.',
-      searchTerms: 'Jetboil MiniMo stove',
-    },
-    {
-      name: 'MSR WindBurner',
-      category: 'Stove',
-      why: 'Excellent wind resistance and fuel efficiency.',
-      searchTerms: 'MSR WindBurner stove',
-    },
-    {
-      name: 'Anker PowerCore 24K (737)',
-      category: 'Power Bank',
-      why: 'Multiple charges, most reliable battery brand in freezing temperatures.',
-      searchTerms: 'Anker PowerCore 24K 737 power bank',
-    },
-  ],
 };
 
 // Parse CSV data from the ElkGearlist.csv file
@@ -366,9 +428,9 @@ const GearList = () => {
   const [addingToCategory, setAddingToCategory] = useState(null);
   const [newItemName, setNewItemName] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [showRecommended, setShowRecommended] = useState(false);
-  const [selectedRecommendedCategory, setSelectedRecommendedCategory] =
-    useState(null);
+  const [showPicksModal, setShowPicksModal] = useState(false);
+  const [editingWeightItem, setEditingWeightItem] = useState(null);
+  const [weightValue, setWeightValue] = useState('');
 
   // Load gear data from storage or use initial data
   useEffect(() => {
@@ -481,6 +543,33 @@ const GearList = () => {
     setImageValue('');
   };
 
+  // Start editing an item's optimal weight (oz)
+  const startWeightEdit = item => {
+    setEditingWeightItem(item.id);
+    setWeightValue(item.weight != null ? String(item.weight) : '');
+  };
+
+  // Save (or clear) an item's weight
+  const saveWeight = (category, itemId) => {
+    const raw = weightValue.trim();
+    const num = raw === '' ? null : Number(raw);
+    setGearData(prev => ({
+      ...prev,
+      [category]: prev[category].map(item =>
+        item.id === itemId
+          ? { ...item, weight: Number.isFinite(num) ? num : null }
+          : item
+      ),
+    }));
+    setEditingWeightItem(null);
+    setWeightValue('');
+  };
+
+  const cancelWeightEdit = () => {
+    setEditingWeightItem(null);
+    setWeightValue('');
+  };
+
   // Add new item to category
   const addItem = category => {
     if (newItemName.trim()) {
@@ -491,6 +580,7 @@ const GearList = () => {
         packed: false,
         owned: false,
         image: null,
+        weight: null,
       };
       setGearData(prev => ({
         ...prev,
@@ -499,28 +589,6 @@ const GearList = () => {
       setNewItemName('');
       setAddingToCategory(null);
     }
-  };
-
-  // Search for recommended item online
-  const searchOnline = searchTerms => {
-    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchTerms)}`;
-    window.open(googleSearchUrl, '_blank', 'noopener,noreferrer');
-  };
-
-  // Add recommended item to gear list
-  const addRecommendedItem = (item, category) => {
-    const newItem = {
-      id: `${category}-${Date.now()}`,
-      name: item.name,
-      category,
-      packed: false,
-      owned: false,
-      image: null,
-    };
-    setGearData(prev => ({
-      ...prev,
-      [category]: [...(prev[category] || []), newItem],
-    }));
   };
 
   // Get all items for search suggestions
@@ -566,15 +634,27 @@ const GearList = () => {
     let total = 0;
     let packed = 0;
     let owned = 0;
+    let totalWeight = 0;
+    let packedWeight = 0;
+    let ownedWeight = 0;
     Object.values(gearData).forEach(categoryItems => {
       total += categoryItems.length;
       packed += categoryItems.filter(item => item.packed).length;
       owned += categoryItems.filter(item => item.owned).length;
+      categoryItems.forEach(item => {
+        const w = typeof item.weight === 'number' ? item.weight : 0;
+        totalWeight += w;
+        if (item.packed) packedWeight += w;
+        if (item.owned) ownedWeight += w;
+      });
     });
     return {
       total,
       packed,
       owned,
+      totalWeight,
+      packedWeight,
+      ownedWeight,
       percentage: total > 0 ? Math.round((packed / total) * 100) : 0,
       ownedPercentage: total > 0 ? Math.round((owned / total) * 100) : 0,
     };
@@ -678,6 +758,45 @@ const GearList = () => {
               }}
             />
           </div>
+        </div>
+
+        {/* Pack Weight Summary */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            flexWrap: 'wrap',
+            padding: '10px 12px',
+            marginBottom: '16px',
+            background: C.card,
+            border: `1px solid ${C.border}`,
+            borderRadius: '6px',
+          }}
+        >
+          <Scale size={15} style={{ color: C.accent, flexShrink: 0 }} />
+          <span
+            style={{
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: '11px',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: C.textMuted,
+            }}
+          >
+            Pack Weight
+          </span>
+          <span style={{ fontSize: '13px', color: C.text }}>
+            Total <strong>{fmtWeight(packingStats.totalWeight)}</strong>
+          </span>
+          <span style={{ color: C.textMuted }}>·</span>
+          <span style={{ fontSize: '13px', color: C.greenLight }}>
+            Packed {fmtWeight(packingStats.packedWeight)}
+          </span>
+          <span style={{ color: C.textMuted }}>·</span>
+          <span style={{ fontSize: '13px', color: C.accentHover }}>
+            Owned {fmtWeight(packingStats.ownedWeight)}
+          </span>
         </div>
 
         {/* Search Bar */}
@@ -873,296 +992,60 @@ const GearList = () => {
         </div>
       </div>
 
-      {/* Recommended Gear Section */}
-      <div
+      {/* Buy Once, Cry Once — opens curated buy-list popup */}
+      <button
+        onClick={() => setShowPicksModal(true)}
         style={{
+          width: '100%',
+          textAlign: 'left',
+          cursor: 'pointer',
           backgroundColor: C.card,
           border: `2px solid ${C.accent}`,
           borderRadius: '8px',
           marginBottom: '20px',
-          overflow: 'hidden',
+          padding: '14px 20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '12px',
+          background: `linear-gradient(135deg, ${C.cardHover} 0%, ${C.card} 100%)`,
         }}
+        aria-label="Open Buy Once, Cry Once recommended gear"
       >
-        {/* Header */}
-        <div
-          onClick={() => setShowRecommended(!showRecommended)}
-          style={{
-            padding: '16px 20px',
-            cursor: 'pointer',
-            background: `linear-gradient(135deg, ${C.cardHover} 0%, ${C.card} 100%)`,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            transition: 'background-color 0.2s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = C.border)}
-          onMouseLeave={e =>
-            (e.currentTarget.style.background = `linear-gradient(135deg, ${C.cardHover} 0%, ${C.card} 100%)`)
-          }
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {showRecommended ? (
-              <ChevronDown size={20} color={C.accent} />
-            ) : (
-              <ChevronRight size={20} color={C.accent} />
-            )}
-            <Award size={22} color={C.accent} />
-            <div>
-              <h3
-                style={{
-                  margin: 0,
-                  fontSize: '18px',
-                  fontWeight: 600,
-                  color: C.accent,
-                }}
-              >
-                Buy Once, Cry Once
-              </h3>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: '12px',
-                  color: C.textSub,
-                  marginTop: '2px',
-                }}
-              >
-                Top-rated gear recommendations from western big game hunters
-              </p>
-            </div>
-          </div>
-          <Star size={20} color={C.amber} fill={C.amber} />
-        </div>
-
-        {/* Content */}
-        {showRecommended && (
-          <div style={{ padding: '16px 20px' }}>
-            {/* Category Selection */}
-            <div
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Award size={22} color={C.accent} />
+          <div>
+            <h3
               style={{
-                display: 'flex',
-                gap: '8px',
-                flexWrap: 'wrap',
-                marginBottom: '16px',
-                paddingBottom: '16px',
-                borderBottom: `1px solid ${C.border}`,
+                margin: 0,
+                fontSize: '18px',
+                fontWeight: 600,
+                color: C.accent,
               }}
             >
-              {Object.keys(RECOMMENDED_GEAR).map(category => (
-                <button
-                  key={category}
-                  onClick={() =>
-                    setSelectedRecommendedCategory(
-                      selectedRecommendedCategory === category ? null : category
-                    )
-                  }
-                  style={{
-                    padding: '8px 14px',
-                    backgroundColor:
-                      selectedRecommendedCategory === category
-                        ? C.accent
-                        : C.surface,
-                    color:
-                      selectedRecommendedCategory === category
-                        ? C.white
-                        : C.text,
-                    border: `1px solid ${selectedRecommendedCategory === category ? C.accent : C.border}`,
-                    borderRadius: '20px',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={e => {
-                    if (selectedRecommendedCategory !== category) {
-                      e.currentTarget.style.backgroundColor = C.cardHover;
-                      e.currentTarget.style.borderColor = C.borderLight;
-                    }
-                  }}
-                  onMouseLeave={e => {
-                    if (selectedRecommendedCategory !== category) {
-                      e.currentTarget.style.backgroundColor = C.surface;
-                      e.currentTarget.style.borderColor = C.border;
-                    }
-                  }}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-
-            {/* Recommended Items */}
-            {selectedRecommendedCategory &&
-              RECOMMENDED_GEAR[selectedRecommendedCategory] && (
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px',
-                  }}
-                >
-                  {RECOMMENDED_GEAR[selectedRecommendedCategory].map(
-                    (item, index) => (
-                      <div
-                        key={index}
-                        style={{
-                          backgroundColor: C.surface,
-                          border: `1px solid ${C.border}`,
-                          borderRadius: '6px',
-                          padding: '14px',
-                          transition: 'all 0.2s',
-                        }}
-                        onMouseEnter={e => {
-                          e.currentTarget.style.backgroundColor = C.cardHover;
-                          e.currentTarget.style.borderColor = C.borderLight;
-                        }}
-                        onMouseLeave={e => {
-                          e.currentTarget.style.backgroundColor = C.surface;
-                          e.currentTarget.style.borderColor = C.border;
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'flex-start',
-                            gap: '12px',
-                            marginBottom: '8px',
-                          }}
-                        >
-                          <div style={{ flex: 1 }}>
-                            <div
-                              style={{
-                                fontSize: '15px',
-                                fontWeight: 600,
-                                color: C.text,
-                                marginBottom: '4px',
-                              }}
-                            >
-                              {item.name}
-                            </div>
-                            <div
-                              style={{
-                                fontSize: '12px',
-                                color: C.accent,
-                                marginBottom: '8px',
-                                fontWeight: 500,
-                              }}
-                            >
-                              {item.category}
-                            </div>
-                            <div
-                              style={{
-                                fontSize: '13px',
-                                color: C.textSub,
-                                lineHeight: '1.5',
-                              }}
-                            >
-                              {item.why}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div
-                          style={{
-                            display: 'flex',
-                            gap: '8px',
-                            marginTop: '12px',
-                          }}
-                        >
-                          <button
-                            onClick={() => searchOnline(item.searchTerms)}
-                            style={{
-                              flex: 1,
-                              padding: '8px 12px',
-                              backgroundColor: C.green,
-                              color: C.white,
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              fontSize: '13px',
-                              fontWeight: 500,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '6px',
-                              transition: 'background-color 0.2s',
-                            }}
-                            onMouseEnter={e =>
-                              (e.currentTarget.style.backgroundColor =
-                                C.greenLight)
-                            }
-                            onMouseLeave={e =>
-                              (e.currentTarget.style.backgroundColor = C.green)
-                            }
-                          >
-                            <ShoppingCart size={14} />
-                            Find Online
-                          </button>
-                          <button
-                            onClick={() =>
-                              addRecommendedItem(
-                                item,
-                                selectedRecommendedCategory
-                              )
-                            }
-                            style={{
-                              flex: 1,
-                              padding: '8px 12px',
-                              backgroundColor: 'transparent',
-                              color: C.accent,
-                              border: `1px solid ${C.accent}`,
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              fontSize: '13px',
-                              fontWeight: 500,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '6px',
-                              transition: 'all 0.2s',
-                            }}
-                            onMouseEnter={e => {
-                              e.currentTarget.style.backgroundColor = C.accent;
-                              e.currentTarget.style.color = C.white;
-                            }}
-                            onMouseLeave={e => {
-                              e.currentTarget.style.backgroundColor =
-                                'transparent';
-                              e.currentTarget.style.color = C.accent;
-                            }}
-                          >
-                            <Plus size={14} />
-                            Add to My Gear
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  )}
-                </div>
-              )}
-
-            {/* No category selected message */}
-            {!selectedRecommendedCategory && (
-              <div
-                style={{
-                  textAlign: 'center',
-                  padding: '24px',
-                  color: C.textMuted,
-                  fontSize: '14px',
-                }}
-              >
-                Select a category above to view recommended gear
-              </div>
-            )}
+              Buy Once, Cry Once
+            </h3>
+            <p
+              style={{ margin: '2px 0 0', fontSize: '12px', color: C.textSub }}
+            >
+              Curated premium picks — tap to view &amp; buy
+            </p>
           </div>
-        )}
-      </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Star size={18} color={C.amber} fill={C.amber} />
+          <ExternalLink size={18} color={C.accent} />
+        </div>
+      </button>
 
       {/* Gear Categories */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {Object.entries(gearData).map(([category, items]) => {
           const categoryPacked = items.filter(item => item.packed).length;
+          const categoryWeight = items.reduce(
+            (s, it) => s + (typeof it.weight === 'number' ? it.weight : 0),
+            0
+          );
           const categoryTotal = items.length;
           const isExpanded = expandedCategories[category];
 
@@ -1217,6 +1100,17 @@ const GearList = () => {
                   >
                     {categoryPacked}/{categoryTotal}
                   </span>
+                  {categoryWeight > 0 && (
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        color: C.textMuted,
+                        fontFamily: "'IBM Plex Mono', monospace",
+                      }}
+                    >
+                      {fmtWeight(categoryWeight)}
+                    </span>
+                  )}
                 </div>
                 <button
                   onClick={e => {
@@ -1447,6 +1341,62 @@ const GearList = () => {
                           </span>
                         )}
 
+                        {/* Optimal weight (editable) */}
+                        {editingWeightItem === item.id ? (
+                          <input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            value={weightValue}
+                            onChange={e => setWeightValue(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter')
+                                saveWeight(category, item.id);
+                              if (e.key === 'Escape') cancelWeightEdit();
+                            }}
+                            onBlur={() => saveWeight(category, item.id)}
+                            autoFocus
+                            placeholder="oz"
+                            aria-label="Optimal weight in ounces"
+                            style={{
+                              width: '56px',
+                              flexShrink: 0,
+                              padding: '3px 6px',
+                              backgroundColor: C.card,
+                              border: `1px solid ${C.accent}`,
+                              borderRadius: '4px',
+                              color: C.text,
+                              fontSize: '12px',
+                              fontFamily: "'IBM Plex Mono', monospace",
+                              outline: 'none',
+                            }}
+                          />
+                        ) : (
+                          <button
+                            onClick={() => startWeightEdit(item)}
+                            title="Optimal weight (click to edit)"
+                            style={{
+                              flexShrink: 0,
+                              minWidth: '52px',
+                              padding: '2px 6px',
+                              background: 'transparent',
+                              border: `1px dashed ${C.border}`,
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontFamily: "'IBM Plex Mono', monospace",
+                              fontSize: '11px',
+                              color:
+                                item.weight != null
+                                  ? C.greenLight
+                                  : C.textMuted,
+                            }}
+                          >
+                            {item.weight != null
+                              ? fmtWeight(item.weight)
+                              : '+ wt'}
+                          </button>
+                        )}
+
                         {/* Owned (acquired) checkbox */}
                         <label
                           title="I already own this"
@@ -1669,6 +1619,162 @@ const GearList = () => {
           );
         })}
       </div>
+
+      {/* Buy Once, Cry Once — curated picks popup */}
+      {showPicksModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Buy Once, Cry Once recommended gear"
+          onClick={() => setShowPicksModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1000,
+            background: 'rgba(4, 10, 6, 0.72)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: '640px',
+              maxHeight: '85vh',
+              display: 'flex',
+              flexDirection: 'column',
+              backgroundColor: C.surface,
+              border: `1px solid ${C.borderLight}`,
+              borderRadius: '10px',
+              overflow: 'hidden',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+            }}
+          >
+            {/* Modal header */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '16px 20px',
+                borderBottom: `1px solid ${C.border}`,
+              }}
+            >
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+              >
+                <Award size={20} color={C.accent} />
+                <div>
+                  <h3
+                    style={{
+                      margin: 0,
+                      fontSize: '17px',
+                      fontWeight: 600,
+                      color: C.accent,
+                    }}
+                  >
+                    Buy Once, Cry Once
+                  </h3>
+                  <p
+                    style={{
+                      margin: '2px 0 0',
+                      fontSize: '11px',
+                      color: C.textMuted,
+                      fontFamily: "'IBM Plex Mono', monospace",
+                    }}
+                  >
+                    Curated GMU 79 picks · links open a shopping search
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPicksModal(false)}
+                aria-label="Close"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: C.textSub,
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <div style={{ overflowY: 'auto', padding: '12px 20px 20px' }}>
+              {CRY_ONCE_PICKS.map(grp => (
+                <div key={grp.group} style={{ marginTop: '14px' }}>
+                  <div
+                    style={{
+                      fontFamily: "'IBM Plex Mono', monospace",
+                      fontSize: '10px',
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      color: C.textMuted,
+                      marginBottom: '6px',
+                    }}
+                  >
+                    {grp.group}
+                  </div>
+                  {grp.items.map(it => (
+                    <a
+                      key={it.name}
+                      href={buyLink(it.q)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '10px 12px',
+                        marginBottom: '6px',
+                        borderRadius: '6px',
+                        border: `1px solid ${C.border}`,
+                        background: C.card,
+                        textDecoration: 'none',
+                      }}
+                      onMouseEnter={e =>
+                        (e.currentTarget.style.borderColor = C.accent)
+                      }
+                      onMouseLeave={e =>
+                        (e.currentTarget.style.borderColor = C.border)
+                      }
+                    >
+                      <div style={{ minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontSize: '14px',
+                            color: C.text,
+                            fontWeight: 500,
+                          }}
+                        >
+                          {it.name}
+                        </div>
+                        <div style={{ fontSize: '12px', color: C.textSub }}>
+                          {it.why}
+                        </div>
+                      </div>
+                      <ExternalLink
+                        size={15}
+                        color={C.accent}
+                        style={{ flexShrink: 0 }}
+                      />
+                    </a>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

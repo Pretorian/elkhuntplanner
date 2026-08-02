@@ -157,6 +157,10 @@ describe('elevation grid (area mode)', () => {
     expect(url).toContain('rows=2');
     expect(url).toContain('columns=2');
     expect(url).toContain('unit=feet');
+    // locations MUST be southwest corner then northeast corner (lat,lng)
+    expect(url).toContain(
+      'locations=37.500000,-107.000000|38.000000,-106.500000'
+    );
   });
 
   it('reshapes a flat result list into rows x cols', async () => {
